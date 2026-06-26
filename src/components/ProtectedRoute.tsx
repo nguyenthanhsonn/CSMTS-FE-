@@ -1,0 +1,37 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '../store/authStore';
+import { UserRole } from '../types';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRole?: UserRole;
+}
+
+export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
+  const { isAuthenticated, user } = useAuthStore();
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+    } else if (requiredRole && user?.role !== requiredRole) {
+      router.replace(user?.role === 'admin' ? '/admin' : '/student');
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [isAuthenticated, user, requiredRole, router]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
