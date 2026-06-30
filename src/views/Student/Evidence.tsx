@@ -3,15 +3,8 @@
 import { useState } from 'react';
 import { Upload, File, Trash2, Eye, CheckCircle, AlertCircle } from 'lucide-react';
 
-interface EvidenceFile {
-  id: string;
-  fileName: string;
-  fileType: string;
-  fileSize: number;
-  criteriaId: string;
-  uploadDate: string;
-  aiVerification?: 'verified' | 'suspicious' | 'manual_review';
-}
+import { EvidenceFile } from '../../types';
+
 
 export const StudentEvidence = () => {
   const [evidences, setEvidences] = useState<EvidenceFile[]>([
@@ -74,8 +67,8 @@ export const StudentEvidence = () => {
   ];
 
   return (
-    <div className="max-w-6xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Quản lý minh chứng</h1>
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Quản lý minh chứng</h1>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <h3 className="font-semibold text-blue-900 mb-2">Lưu ý khi tải minh chứng</h3>
@@ -91,11 +84,11 @@ export const StudentEvidence = () => {
         const groupEvidences = evidences.filter((e) => e.criteriaId === group.id);
 
         return (
-          <div key={group.id} className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">{group.name}</h2>
-              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition">
-                <Upload size={20} />
+          <div key={group.id} className="bg-white rounded-xl shadow-sm border p-4 sm:p-6 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800">{group.name}</h2>
+              <label className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition text-sm font-semibold w-full sm:w-auto">
+                <Upload size={16} />
                 Tải lên
                 <input
                   type="file"
@@ -117,9 +110,10 @@ export const StudentEvidence = () => {
                 {groupEvidences.map((evidence) => (
                   <div
                     key={evidence.id}
-                    className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition"
                   >
-                    <div className="flex-shrink-0">
+                    <div className="flex items-center gap-3 min-w-0 w-full">
+                      <div className="flex-shrink-0">
                       {evidence.fileType.startsWith('image/') ? (
                         <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
                           <File className="text-blue-600" size={24} />
@@ -157,14 +151,15 @@ export const StudentEvidence = () => {
                         )}
                       </div>
                     </div>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer">
                         <Eye size={20} />
                       </button>
                       <button
                         onClick={() => handleDelete(evidence.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
                       >
                         <Trash2 size={20} />
                       </button>
@@ -179,3 +174,5 @@ export const StudentEvidence = () => {
     </div>
   );
 };
+
+export default StudentEvidence;

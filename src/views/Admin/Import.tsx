@@ -36,12 +36,12 @@ export const AdminImport = () => {
         <p className="text-gray-600 mb-4">
           Vui lòng tải file mẫu và điền thông tin sinh viên theo đúng định dạng
         </p>
-        <div className="flex gap-4">
-          <button className="flex items-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <button className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer">
             <Download size={20} />
             Tải mẫu Excel
           </button>
-          <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <button className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
             <Download size={20} />
             Tải mẫu Word
           </button>
@@ -51,7 +51,7 @@ export const AdminImport = () => {
       <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Upload file danh sách</h2>
         
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-12">
           <div className="text-center">
             <Upload className="mx-auto mb-4 text-gray-400" size={48} />
             <p className="text-gray-600 mb-4">
@@ -82,7 +82,7 @@ export const AdminImport = () => {
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <h2 className="text-lg font-semibold mb-4">Kết quả import</h2>
           
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center gap-3 mb-2">
                 <CheckCircle className="text-green-600" size={24} />
@@ -135,3 +135,5 @@ export const AdminImport = () => {
     </div>
   );
 };
+
+export default AdminImport;

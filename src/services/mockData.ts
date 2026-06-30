@@ -1,4 +1,4 @@
-import { Faculty, Major, Class, EvaluationForm, DashboardStats } from '../types';
+import type { Faculty, Major, Class, EvaluationForm, DashboardStats } from '../types';
 
 export const mockFaculties: Faculty[] = [
   { id: '1', code: 'CNTT', name: 'Công nghệ thông tin', isActive: true },

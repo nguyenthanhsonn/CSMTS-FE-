@@ -1,47 +1,123 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { mockClasses, mockMajors, mockFaculties } from '../../services/mockData';
-
-interface Student {
-  id: string;
-  studentCode: string;
-  fullName: string;
-  dateOfBirth: string;
-  phoneNumber: string;
-}
+import { ClassListStudentItem } from '../../types';
+import ModalConfirm from '../../components/common/modalConfirm';
+import SearchFilterBar from '../../components/admin/SearchFilterBar';
+import DataTable, { type Column } from '../../components/admin/DataTable';
+import ModalAddStudent from '../../components/admin/modalAddStudent';
 
 export const AdminClassList = () => {
   const [selectedFaculty, setSelectedFaculty] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const [students] = useState<Student[]>([
+  const [students, setStudents] = useState<ClassListStudentItem[]>([
     { id: '1', studentCode: 'SV001', fullName: 'Nguyễn Văn A', dateOfBirth: '2003-05-15', phoneNumber: '0123456789' },
     { id: '2', studentCode: 'SV002', fullName: 'Trần Thị B', dateOfBirth: '2003-08-20', phoneNumber: '0987654321' },
     { id: '3', studentCode: 'SV003', fullName: 'Lê Văn C', dateOfBirth: '2003-03-10', phoneNumber: '0912345678' },
   ]);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteStudent, setPendingDeleteStudent] = useState<ClassListStudentItem | null>(null);
 
   const filteredStudents = students.filter((s) =>
     s.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.studentCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  return (
-    <div className="max-w-7xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Danh sách lớp</h1>
+  const handleDeleteClick = (student: ClassListStudentItem) => {
+    setPendingDeleteStudent(student);
+    setConfirmOpen(true);
+  };
 
-      <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Chọn lớp</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  const handleConfirmDelete = () => {
+    if (pendingDeleteStudent) {
+      setStudents((prev) => prev.filter((s) => s.id !== pendingDeleteStudent.id));
+    }
+    setConfirmOpen(false);
+    setPendingDeleteStudent(null);
+  };
+
+  const handleAddStudentSubmit = (newStudentData: Omit<ClassListStudentItem, 'id'> & { classId: string }) => {
+    if (newStudentData.classId === selectedClass) {
+      const newStudent: ClassListStudentItem = {
+        id: String(Date.now()),
+        studentCode: newStudentData.studentCode,
+        fullName: newStudentData.fullName,
+        dateOfBirth: newStudentData.dateOfBirth,
+        phoneNumber: newStudentData.phoneNumber,
+      };
+      setStudents((prev) => [...prev, newStudent]);
+    } else {
+      alert(`Đã thêm sinh viên vào lớp học ${mockClasses.find(c => c.id === newStudentData.classId)?.name} thành công!`);
+    }
+  };
+
+  const columns: Column<ClassListStudentItem>[] = [
+    {
+      key: 'studentCode',
+      label: 'Mã SV',
+      width: '20%',
+      render: (val) => <span className="font-mono text-sm">{val as string}</span>,
+    },
+    {
+      key: 'fullName',
+      label: 'Họ tên',
+      width: '35%',
+      render: (val) => <span className="font-medium text-[#1A1B1E]">{val as string}</span>,
+    },
+    {
+      key: 'dateOfBirth',
+      label: 'Ngày sinh',
+      width: '20%',
+      render: (val) => <span>{new Date(val as string).toLocaleDateString('vi-VN')}</span>,
+    },
+    {
+      key: 'phoneNumber',
+      label: 'Số ĐT',
+      width: '15%',
+      render: (val) => <span className="text-gray-600">{val as string}</span>,
+    },
+    {
+      key: 'actions',
+      label: 'Thao tác',
+      width: '10%',
+      render: (_, row) => (
+        <button
+          onClick={() => handleDeleteClick(row)}
+          className="p-2 cursor-pointer text-red-600 hover:bg-red-50 rounded-lg"
+          title="Xóa khỏi lớp"
+        >
+          <Trash2 size={18} />
+        </button>
+      ),
+    },
+  ];
+
+  return (
+    <div className="flex flex-col min-h-[calc(100vh-140px)] p-4 bg-[#F8F9FA] gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">Danh sách lớp</h1>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border p-4">
+        <h2 className="text-sm font-semibold mb-3 text-gray-800">Chọn lớp</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Khoa</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Khoa</label>
             <select
               value={selectedFaculty}
-              onChange={(e) => setSelectedFaculty(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              onChange={(e) => {
+                setSelectedFaculty(e.target.value);
+                setSelectedMajor('');
+                setSelectedClass('');
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
             >
               <option value="">-- Chọn khoa --</option>
               {mockFaculties.map((f) => (
@@ -50,11 +126,14 @@ export const AdminClassList = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Ngành</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Ngành</label>
             <select
               value={selectedMajor}
-              onChange={(e) => setSelectedMajor(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              onChange={(e) => {
+                setSelectedMajor(e.target.value);
+                setSelectedClass('');
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
             >
               <option value="">-- Chọn ngành --</option>
               {mockMajors.filter(m => !selectedFaculty || m.facultyId === selectedFaculty).map((m) => (
@@ -63,11 +142,11 @@ export const AdminClassList = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Lớp</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Lớp</label>
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
             >
               <option value="">-- Chọn lớp --</option>
               {mockClasses.filter(c => !selectedMajor || c.majorId === selectedMajor).map((c) => (
@@ -79,58 +158,59 @@ export const AdminClassList = () => {
       </div>
 
       {selectedClass && (
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold">Danh sách sinh viên</h2>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              <Plus size={20} />
+        <div className="flex-1 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-800">Danh sách sinh viên</h2>
+            <button
+              onClick={() => setAddModalOpen(true)}
+              className="flex cursor-pointer items-center gap-2 px-3 py-1.5 bg-[#3B5BDB] text-white rounded-lg hover:bg-blue-700 font-semibold text-xs transition"
+            >
+              <Plus size={14} />
               Thêm sinh viên
             </button>
           </div>
 
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm kiếm sinh viên..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-          </div>
+          <SearchFilterBar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Tìm kiếm sinh viên..."
+          />
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Mã SV</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Họ tên</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Ngày sinh</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Số ĐT</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStudents.map((student) => (
-                  <tr key={student.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4 font-mono">{student.studentCode}</td>
-                    <td className="py-3 px-4">{student.fullName}</td>
-                    <td className="py-3 px-4">{new Date(student.dateOfBirth).toLocaleDateString('vi-VN')}</td>
-                    <td className="py-3 px-4">{student.phoneNumber}</td>
-                    <td className="py-3 px-4">
-                      <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex-1">
+            <DataTable
+              columns={columns}
+              data={filteredStudents}
+              pageSize={5}
+              emptyText="Không có dữ liệu sinh viên"
+              minHeight={260}
+            />
           </div>
         </div>
       )}
+
+      <ModalConfirm
+        isOpen={confirmOpen}
+        title="Xóa sinh viên khỏi lớp"
+        message={`Bạn có chắc chắn muốn xóa sinh viên ${pendingDeleteStudent?.fullName} ra khỏi lớp học hiện tại không?`}
+        targetName={pendingDeleteStudent?.fullName}
+        type="danger"
+        confirmText="Xóa khỏi lớp"
+        cancelText="Hủy bỏ"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setPendingDeleteStudent(null);
+        }}
+      />
+
+      <ModalAddStudent
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSubmit={handleAddStudentSubmit}
+        defaultClassId={selectedClass}
+      />
     </div>
   );
 };
+
+export default AdminClassList;

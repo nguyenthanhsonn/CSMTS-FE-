@@ -1,6 +1,6 @@
 'use client';
 
-import { AdminUsers } from '../../../views/Admin/Users';
+import { AdminUsers } from '../../../views/Admin/Student';
 import { MainLayout } from '../../../components/Layout/MainLayout';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 

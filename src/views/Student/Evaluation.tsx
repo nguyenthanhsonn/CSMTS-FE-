@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Save, Send, Calculator } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import { EvaluationForm } from '../../types';
+import type { EvaluationForm } from '../../types/student';
 import { createMockEvaluationForm } from '../../services/mockData';
 import { calculateTotalScore } from '../../services/scoreCalculator';
 
@@ -38,9 +38,9 @@ export const StudentEvaluation = () => {
   };
 
   return (
-    <div className="max-w-6xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Phiếu đánh giá rèn luyện</h1>
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Phiếu đánh giá rèn luyện</h1>
         <div className="flex gap-3">
           <button
             onClick={handleCalculate}
@@ -514,3 +514,5 @@ export const StudentEvaluation = () => {
     </div>
   );
 };
+
+export default StudentEvaluation;

@@ -143,27 +143,27 @@ export const StudentEvaluationComplete = () => {
   };
 
   return (
-    <div className="max-w-7xl">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Phiếu đánh giá kết quả rèn luyện</h1>
-          <p className="text-gray-600 mt-2">Tổng cộng: 100 điểm (5 mục đánh giá)</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Phiếu đánh giá kết quả rèn luyện</h1>
+          <p className="text-sm text-gray-600 mt-1">Tổng cộng: 100 điểm (5 mục đánh giá)</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2.5 sm:gap-3">
           <button
             onClick={() => setShowScores(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            className="flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition cursor-pointer text-sm font-semibold w-full sm:w-auto"
           >
-            <Calculator size={20} />
+            <Calculator size={18} />
             Tính điểm
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
-            <Save size={20} />
+          <button className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition cursor-pointer text-sm font-semibold w-full sm:w-auto">
+            <Save size={18} />
             Lưu nháp
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-            <Send size={20} />
+          <button className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer text-sm font-semibold w-full sm:w-auto">
+            <Send size={18} />
             Nộp phiếu
           </button>
         </div>
@@ -172,16 +172,16 @@ export const StudentEvaluationComplete = () => {
       {/* TRANG 1: Mục I - Ý thức học tập */}
       <div className="bg-white rounded-xl shadow-sm border mb-6">
         <div 
-          className="p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-xl"
+          className="p-4 sm:p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-xl"
           onClick={() => toggleSection('page1')}
         >
-          <div>
-            <h2 className="text-2xl font-bold text-blue-900">TRANG 1</h2>
-            <h3 className="text-xl font-semibold text-blue-700 mt-1">
+          <div className="min-w-0 pr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-900">TRANG 1</h2>
+            <h3 className="text-base sm:text-lg font-semibold text-blue-700 mt-1 leading-snug">
               I. Ý thức tham gia học tập (Tối đa 20 điểm)
             </h3>
           </div>
-          {expandedSections.page1 ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+          {expandedSections.page1 ? <ChevronUp size={20} className="shrink-0" /> : <ChevronDown size={20} className="shrink-0" />}
         </div>
 
         {expandedSections.page1 && (
@@ -315,16 +315,16 @@ export const StudentEvaluationComplete = () => {
       {/* TRANG 2: Mục II - Chấp hành nội quy */}
       <div className="bg-white rounded-xl shadow-sm border mb-6">
         <div 
-          className="p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-red-50 to-red-100 rounded-t-xl"
+          className="p-4 sm:p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-red-50 to-red-100 rounded-t-xl"
           onClick={() => toggleSection('page2')}
         >
-          <div>
-            <h2 className="text-2xl font-bold text-red-900">TRANG 2</h2>
-            <h3 className="text-xl font-semibold text-red-700 mt-1">
+          <div className="min-w-0 pr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-red-900">TRANG 2</h2>
+            <h3 className="text-base sm:text-lg font-semibold text-red-700 mt-1 leading-snug">
               II. Chấp hành nội quy, quy chế (Tối đa 25 điểm)
             </h3>
           </div>
-          {expandedSections.page2 ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+          {expandedSections.page2 ? <ChevronUp size={20} className="shrink-0" /> : <ChevronDown size={20} className="shrink-0" />}
         </div>
 
         {expandedSections.page2 && (
@@ -570,3 +570,5 @@ export const StudentEvaluationComplete = () => {
     </div>
   );
 };
+
+export default StudentEvaluationComplete;

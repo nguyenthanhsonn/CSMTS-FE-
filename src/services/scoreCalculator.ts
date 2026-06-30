@@ -1,4 +1,4 @@
-import { EvaluationForm } from '../types';
+import type { EvaluationForm } from '../types/student';
 
 // Tính điểm học tập (max 30 điểm)
 export const calculateAcademicScore = (form: EvaluationForm): number => {

@@ -27,10 +27,10 @@ export const StudentResults = () => {
   ];
 
   return (
-    <div className="max-w-5xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Kết quả đánh giá</h1>
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto w-full space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Kết quả đánh giá</h1>
 
-      <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-xl shadow-lg p-8 mb-8">
+      <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-xl shadow-lg p-8">
         <div className="flex items-center gap-3 mb-4">
           <Award size={32} />
           <div>
@@ -41,18 +41,18 @@ export const StudentResults = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6 mt-6">
-          <div className="bg-white bg-opacity-20 rounded-lg p-6 backdrop-blur-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-6">
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 sm:p-6 backdrop-blur-sm">
             <p className="text-blue-100 text-sm mb-2">Tổng điểm</p>
-            <p className="text-5xl font-bold">{currentResult.scores.total}</p>
+            <p className="text-4xl sm:text-5xl font-bold">{currentResult.scores.total}</p>
             <p className="text-blue-100 mt-2">/ 100 điểm</p>
           </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-6 backdrop-blur-sm">
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 sm:p-6 backdrop-blur-sm">
             <p className="text-blue-100 text-sm mb-2">Xếp loại</p>
-            <p className="text-3xl font-bold">{currentResult.rating}</p>
+            <p className="text-2xl sm:text-3xl font-bold">{currentResult.rating}</p>
             <div className="flex items-center gap-2 mt-2 text-green-300">
               <TrendingUp size={18} />
-              <span className="text-sm">+6 điểm so với kỳ trước</span>
+              <span className="text-xs sm:text-sm">+6 điểm so với kỳ trước</span>
             </div>
           </div>
         </div>
@@ -107,3 +107,5 @@ export const StudentResults = () => {
     </div>
   );
 };
+
+export default StudentResults;

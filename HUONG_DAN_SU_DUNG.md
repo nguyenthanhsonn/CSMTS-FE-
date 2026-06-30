@@ -1,5 +1,7 @@
 # Hướng dẫn sử dụng Hệ thống Đánh giá Rèn luyện Sinh viên
 
+---
+
 ## 🎯 Dành cho SINH VIÊN
 
 ### Bước 1: Đăng nhập hệ thống
@@ -212,8 +214,8 @@ Chọn 1 mức từ ComboBox:
 Chọn 1 mức từ ComboBox:
 - Xuất sắc (được khen thưởng) → 7 điểm
   - Cần **file đính kèm** giấy khen
-- Hoàn thành tốt → 6 điểm
-- Hoàn thành → 5 điểm
+- Hoàn thành tốt → 6 điểm (thực tế ghi 5 điểm)
+- Hoàn thành → 4 điểm (thực tế ghi 3 điểm)
 - Không hoàn thành → 0 điểm
 
 #### b) Kỹ năng tổ chức (0-3 điểm)
@@ -250,9 +252,9 @@ Vào menu **Quản lý minh chứng**:
 2. Click **Tải lên** hoặc kéo thả file
 3. Hỗ trợ: JPG, PNG, PDF (max 5MB)
 4. AI sẽ tự động kiểm tra:
-   - ✅ Phù hợp
-   - ⚠️ Nghi ngờ không khớp
-   - 📝 Cần kiểm tra thủ công
+   - ✅ Phù hợp (`verified`)
+   - ⚠️ Nghi ngờ không khớp (`suspicious`)
+   - 📝 Cần kiểm tra thủ công (`manual_review`)
 
 ---
 
@@ -281,15 +283,16 @@ Vào menu **Quản lý minh chứng**:
 Vào menu **Lịch sử đánh giá** hoặc **Kết quả**:
 
 ### Trạng thái phiếu
-1. **Nháp** - Chưa nộp
-2. **Đã nộp** - Chờ lớp đánh giá
-3. **Lớp đánh giá** - Chờ CVHT
-4. **CVHT xét duyệt** - Chờ Khoa
-5. **Khoa phê duyệt** - Hoàn tất
+1. **Nháp** (`draft`) - Chưa nộp
+2. **Đã nộp** (`submitted`) - Chờ lớp đánh giá
+3. **Lớp đánh giá** (`class_reviewed`) - Chờ CVHT
+4. **CVHT xét duyệt** (`advisor_reviewed`) - Chờ Khoa
+5. **Khoa phê duyệt** (`faculty_approved`) - Hoàn tất ✅
+6. **Bị trả lại** (`rejected`) - Xem lý do, sửa và nộp lại
 
 ### Xem kết quả
-- Tổng điểm
-- Xếp loại: Xuất sắc / Tốt / Khá / TB / Yếu / Kém
+- Tổng điểm / 100
+- Xếp loại: Xuất sắc / Tốt / Khá / Trung bình / Yếu / Kém
 - Nhận xét từ người đánh giá
 - Chi tiết từng mục
 
@@ -305,6 +308,19 @@ Vào menu **Lịch sử đánh giá** hoặc **Kết quả**:
 | 50-64 | Trung bình |
 | 35-49 | Yếu |
 | <35 | Kém |
+
+---
+
+## 📊 Bảng tổng hợp điểm tối đa
+
+| Mục | Tên | Điểm tối đa |
+|-----|-----|-------------|
+| I | Ý thức tham gia học tập | 20 điểm |
+| II | Chấp hành nội quy, quy chế | 25 điểm |
+| III | Hoạt động CT-XH, văn hóa, thể thao | 20 điểm |
+| IV | Ý thức công dân trong quan hệ cộng đồng | 25 điểm |
+| V | Vai trò cán bộ lớp, Đoàn, Hội, CLB | 10 điểm |
+| **TỔNG** | | **100 điểm** |
 
 ---
 
@@ -333,6 +349,132 @@ Vào menu **Lịch sử đánh giá** hoặc **Kết quả**:
 ### Tốt (80-89 điểm)
 ✅ Xét học bổng khuyến khích  
 ✅ Được khen thưởng  
+
+---
+
+## 🖥️ Dành cho ADMIN / QUẢN TRỊ VIÊN
+
+**Tài khoản demo:** `admin` / `123456`
+
+---
+
+### A1. Quản lý User
+
+1. Vào menu **Quản lý User**
+2. Nhấn **Thêm user** để tạo tài khoản mới (admin hoặc sinh viên)
+3. Điền thông tin: Username, Họ tên, Role (admin / sinh viên), Email
+4. Nhấn icon ✏️ để sửa thông tin user
+5. Nhấn icon 🔒 để khóa / mở khóa tài khoản
+6. Nhấn icon 🗑️ để xóa user (có xác nhận)
+7. Tìm kiếm theo tên hoặc username
+
+> ⚠️ **Lưu ý hiện tại:** Form tạo/sửa User (modal popup) đang trong giai đoạn phát triển.
+
+---
+
+### A2. Quản lý Ngành học
+
+1. Vào menu **Quản lý Ngành**
+2. Nhấn **Thêm ngành** để thêm ngành mới
+3. Điền: Mã ngành + Tên ngành/Chuyên ngành + Khoa
+4. Nhấn icon ✏️ để sửa ngành
+5. Nhấn icon 🗑️ để xóa (có xác nhận)
+6. Danh sách hiển thị: Mã ngành, Tên ngành, Khoa
+
+> ⚠️ **Lưu ý hiện tại:** Form tạo/sửa Ngành (modal) đang trong giai đoạn phát triển.
+
+---
+
+### A3. Quản lý Khoa ✅ (Đầy đủ chức năng)
+
+1. Vào menu **Quản lý Khoa**
+2. Nhấn **Thêm khoa** → Modal popup mở ra
+3. Điền: Mã khoa + Tên khoa → Nhấn **Thêm mới**
+4. Nhấn icon ✏️ → Modal mở sẵn thông tin cũ → Nhấn **Cập nhật**
+5. Nhấn icon 👁️ để ẩn/hiện khoa
+6. Nhấn icon 🗑️ để xóa (có xác nhận)
+
+---
+
+### A4. Quản lý Lớp
+
+1. Vào menu **Quản lý Lớp**
+2. Danh sách hiển thị: Mã lớp, Tên lớp, Ngành, Khoa
+3. Nhấn **Thêm lớp** → Form tạo lớp
+4. Nhấn icon ✏️ để sửa lớp
+5. Nhấn icon 🗑️ để xóa (có xác nhận)
+
+> ⚠️ **Lưu ý hiện tại:** Modal tạo/sửa Lớp đang trong giai đoạn phát triển.
+
+---
+
+### A5. Danh sách lớp & Import
+
+#### Xem danh sách sinh viên theo lớp:
+1. Vào menu **Danh sách lớp**
+2. Chọn **Khoa** từ ComboBox
+3. Chọn **Ngành** từ ComboBox (lọc theo Khoa đã chọn)
+4. Chọn **Lớp** từ ComboBox (lọc theo Ngành đã chọn)
+5. Danh sách sinh viên của lớp đó hiện ra bên dưới
+6. Có thể tìm kiếm trong danh sách
+7. Nhấn **Thêm sinh viên** để thêm mới vào lớp
+
+#### Import danh sách từ file:
+1. Vào menu **Import danh sách**
+2. Tải file mẫu: **Excel (.xlsx/.xls)** hoặc **Word (.doc/.docx)**
+3. Điền thông tin sinh viên vào file theo đúng định dạng mẫu
+4. Upload file lên hệ thống (kéo thả hoặc click chọn file)
+5. Hệ thống xử lý và hiển thị kết quả:
+   - ✅ Số dòng thành công
+   - ❌ Số dòng thất bại + Chi tiết lỗi từng dòng
+6. Nhấn **Xác nhận import** để lưu vào hệ thống
+
+**Các trường bắt buộc trong file mẫu:**
+- Mã sinh viên (không trùng lặp)
+- Họ và tên
+- Ngày sinh (định dạng DD/MM/YYYY)
+- Lớp
+
+---
+
+## 🔄 Luồng xét duyệt phiếu
+
+Sau khi sinh viên nộp phiếu, quy trình xét duyệt như sau:
+
+```
+draft             → SV đang soạn thảo (chưa nộp)
+     ↓ SV nhấn "Nộp phiếu"
+submitted         → SV đã nộp, chờ lớp chấm
+     ↓ Lớp trưởng/Ban cán sự chấm
+class_reviewed    → Lớp đã chấm, chờ CVHT
+     ↓ Cố vấn học tập xét duyệt
+advisor_reviewed  → CVHT đã xét, chờ Khoa
+     ↓ Khoa phê duyệt
+faculty_approved  → Hoàn tất ✅
+
+--- Ở bất kỳ bước nào đều có thể ---
+rejected          → Bị trả lại (bắt buộc ghi rõ lý do)
+```
+
+> ⚠️ **Sinh viên không nộp đúng hạn** → Hệ thống tự động xếp loại **Yếu hoặc Kém**.
+
+---
+
+## 📎 Yêu cầu file minh chứng
+
+| Loại file | Định dạng hỗ trợ |
+|-----------|-----------------|
+| Ảnh | JPG, PNG |
+| Tài liệu | PDF |
+| Kích thước tối đa | 5MB/file |
+
+**Kết quả AI kiểm tra tự động:**
+
+| Trạng thái | Ý nghĩa |
+|-----------|---------|
+| ✅ `verified` | Hợp lệ, đúng nội dung tiêu chí đã khai |
+| ⚠️ `suspicious` | Nghi ngờ không khớp — cần kiểm tra thêm |
+| 📝 `manual_review` | Cần cán bộ kiểm tra thủ công |
 
 ---
 
