@@ -1,15 +1,7 @@
 'use client';
 
-import { StudentEvaluationComplete } from '../../../views/Student/EvaluationComplete';
-import { MainLayout } from '../../../components/Layout/MainLayout';
-import { ProtectedRoute } from '../../../components/ProtectedRoute';
+import { EvaluationFormQD4185 } from '../../../views/Student/EvaluationFormQD4185';
 
 export default function Page() {
-  return (
-    <ProtectedRoute requiredRole="student">
-      <MainLayout>
-        <StudentEvaluationComplete />
-      </MainLayout>
-    </ProtectedRoute>
-  );
+  return <EvaluationFormQD4185 />;
 }

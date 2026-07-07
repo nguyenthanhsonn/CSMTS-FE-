@@ -78,16 +78,16 @@ export const EvaluationPages345 = (props: Props) => {
       {/* TRANG 3: Mục III - Hoạt động CT-XH */}
       <div className="bg-white rounded-xl shadow-sm border mb-6">
         <div 
-          className="p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100 rounded-t-xl"
+          className="p-4 sm:p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100 rounded-t-xl"
           onClick={() => toggleSection('page3')}
         >
-          <div>
-            <h2 className="text-2xl font-bold text-green-900">TRANG 3</h2>
-            <h3 className="text-xl font-semibold text-green-700 mt-1">
+          <div className="min-w-0 pr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-green-900">TRANG 3</h2>
+            <h3 className="text-base sm:text-lg font-semibold text-green-700 mt-1 leading-snug">
               III. Hoạt động chính trị, xã hội, văn hóa, thể thao (Tối đa 20 điểm)
             </h3>
           </div>
-          {expandedSections.page3 ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+          {expandedSections.page3 ? <ChevronUp size={20} className="shrink-0" /> : <ChevronDown size={20} className="shrink-0" />}
         </div>
 
         {expandedSections.page3 && (
@@ -198,16 +198,16 @@ export const EvaluationPages345 = (props: Props) => {
       {/* TRANG 4: Mục IV - Ý thức công dân */}
       <div className="bg-white rounded-xl shadow-sm border mb-6">
         <div 
-          className="p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-t-xl"
+          className="p-4 sm:p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-t-xl"
           onClick={() => toggleSection('page4')}
         >
-          <div>
-            <h2 className="text-2xl font-bold text-yellow-900">TRANG 4</h2>
-            <h3 className="text-xl font-semibold text-yellow-700 mt-1">
+          <div className="min-w-0 pr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-yellow-900">TRANG 4</h2>
+            <h3 className="text-base sm:text-lg font-semibold text-yellow-700 mt-1 leading-snug">
               IV. Ý thức công dân trong quan hệ cộng đồng (Tối đa 25 điểm)
             </h3>
           </div>
-          {expandedSections.page4 ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+          {expandedSections.page4 ? <ChevronUp size={20} className="shrink-0" /> : <ChevronDown size={20} className="shrink-0" />}
         </div>
 
         {expandedSections.page4 && (
@@ -288,16 +288,16 @@ export const EvaluationPages345 = (props: Props) => {
       {/* TRANG 5: Mục V - Vai trò cán bộ */}
       <div className="bg-white rounded-xl shadow-sm border mb-6">
         <div 
-          className="p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-purple-50 to-purple-100 rounded-t-xl"
+          className="p-4 sm:p-6 cursor-pointer flex items-center justify-between bg-gradient-to-r from-purple-50 to-purple-100 rounded-t-xl"
           onClick={() => toggleSection('page5')}
         >
-          <div>
-            <h2 className="text-2xl font-bold text-purple-900">TRANG 5</h2>
-            <h3 className="text-xl font-semibold text-purple-700 mt-1">
+          <div className="min-w-0 pr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-purple-900">TRANG 5</h2>
+            <h3 className="text-base sm:text-lg font-semibold text-purple-700 mt-1 leading-snug">
               V. Vai trò cán bộ lớp, BCH Đoàn, Hội, CLB (Tối đa 10 điểm)
             </h3>
           </div>
-          {expandedSections.page5 ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+          {expandedSections.page5 ? <ChevronUp size={20} className="shrink-0" /> : <ChevronDown size={20} className="shrink-0" />}
         </div>
 
         {expandedSections.page5 && (
@@ -483,3 +483,5 @@ export const EvaluationPages345 = (props: Props) => {
     </>
   );
 };
+
+export default EvaluationPages345;

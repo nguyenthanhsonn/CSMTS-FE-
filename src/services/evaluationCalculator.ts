@@ -1,4 +1,4 @@
-import { CompleteEvaluation } from '../types/evaluation';
+import type { CompleteEvaluation } from '../types/student';
 
 // Mục I: Tính điểm ý thức học tập (max 20 điểm)
 export const calculateAcademicAwareness = (evaluation: CompleteEvaluation): number => {
