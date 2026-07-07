@@ -4,14 +4,14 @@ import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { X, User, Phone, Calendar, School } from 'lucide-react';
-import { mockClasses } from '../../services/mockData';
-import type { ClassListStudentItem } from '../../types';
+import type { Class, ClassListStudentItem } from '../../types';
 
 interface ModalAddStudentProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (student: Omit<ClassListStudentItem, 'id'> & { classId: string }) => void;
   defaultClassId?: string;
+  classes?: Class[];
 }
 
 interface FormValues {
@@ -41,6 +41,7 @@ export default function ModalAddStudent({
   onClose,
   onSubmit,
   defaultClassId = '',
+  classes = [],
 }: ModalAddStudentProps) {
   const formik = useFormik<FormValues>({
     initialValues: {
@@ -187,7 +188,7 @@ export default function ModalAddStudent({
                 {...formik.getFieldProps('classId')}
               >
                 <option value="">-- Chọn lớp học --</option>
-                {mockClasses
+                {classes
                   .filter((c) => c.isActive)
                   .map((cls) => (
                     <option key={cls.id} value={cls.id}>

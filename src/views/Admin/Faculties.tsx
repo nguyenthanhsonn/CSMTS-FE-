@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
-import { mockFaculties } from '../../services/mockData';
+import { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
+import { API_Admin } from '../../api/API_Admin';
 import type { Faculty, FacultyFormValues } from '../../types';
 import ModalCreateFaculty from '../../components/admin/modalCreateFaculty';
 import ModalConfirm from '../../components/common/modalConfirm';
@@ -10,7 +10,11 @@ import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import DataTable, { type Column } from '../../components/admin/DataTable';
 
 export const AdminFaculties = () => {
-  const [faculties, setFaculties] = useState<Faculty[]>(mockFaculties);
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
@@ -19,6 +23,30 @@ export const AdminFaculties = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const [statusFilter, setStatusFilter] = useState('all');
+
+  const loadFaculties = async () => {
+    try {
+      setLoading(true);
+      setErrorMsg('');
+      const data = await API_Admin.getFaculties();
+      // Ensure the returned data has appropriate defaults for Faculty type
+      const normalized: Faculty[] = (data || []).map((f: any) => ({
+        id: f.id,
+        code: f.code || '',
+        name: f.name || '',
+        isActive: f.isActive ?? true,
+      }));
+      setFaculties(normalized);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Không thể tải danh sách khoa.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFaculties();
+  }, []);
 
   const filteredFaculties = faculties.filter((f) => {
     const matchSearch =
@@ -34,10 +62,20 @@ export const AdminFaculties = () => {
     return matchSearch && matchStatus;
   });
 
-  const handleToggleActive = (id: string) => {
-    setFaculties((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, isActive: !f.isActive } : f))
-    );
+  const handleToggleActive = async (id: string) => {
+    const faculty = faculties.find((f) => f.id === id);
+    if (!faculty || actionLoading) return;
+
+    try {
+      setActionLoading(true);
+      setErrorMsg('');
+      await API_Admin.updateFacultyStatus(id, { isActive: !faculty.isActive });
+      await loadFaculties();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Không thể cập nhật trạng thái khoa.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -45,12 +83,26 @@ export const AdminFaculties = () => {
     setConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (pendingDeleteId) {
-      setFaculties((prev) => prev.filter((f) => f.id !== pendingDeleteId));
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteId || actionLoading) return;
+
+    try {
+      setActionLoading(true);
+      setErrorMsg('');
+      await API_Admin.deleteFaculty(pendingDeleteId);
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
+      await loadFaculties();
+    } catch (err: any) {
+      setErrorMsg(
+        err.message || 
+        'Không thể xóa khoa này. Khoa có thể đã có ngành học hoặc phân công hội đồng liên kết.'
+      );
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
+    } finally {
+      setActionLoading(false);
     }
-    setConfirmOpen(false);
-    setPendingDeleteId(null);
   };
 
   const handleOpenModal = (faculty?: Faculty) => {
@@ -67,23 +119,24 @@ export const AdminFaculties = () => {
     setEditingFaculty(null);
   };
 
-  const handleSubmitModal = (values: FacultyFormValues) => {
-    if (editingFaculty) {
-      setFaculties((prev) =>
-        prev.map((f) =>
-          f.id === editingFaculty.id
-            ? { ...f, code: values.code, name: values.name }
-            : f
-        )
-      );
-    } else {
-      const newFaculty: Faculty = {
-        id: Date.now().toString(),
-        code: values.code,
-        name: values.name,
-        isActive: true,
-      };
-      setFaculties((prev) => [...prev, newFaculty]);
+  const handleSubmitModal = async (values: FacultyFormValues) => {
+    if (actionLoading) return;
+
+    try {
+      setActionLoading(true);
+      setErrorMsg('');
+      if (editingFaculty) {
+        await API_Admin.updateFaculty(editingFaculty.id, values);
+      } else {
+        await API_Admin.createFaculty(values);
+      }
+      setShowModal(false);
+      setEditingFaculty(null);
+      await loadFaculties();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Lỗi lưu thông tin khoa. Vui lòng kiểm tra lại mã khoa.');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -167,6 +220,13 @@ export const AdminFaculties = () => {
         </button>
       </div>
 
+      {errorMsg && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-xs sm:text-sm font-semibold">
+          <AlertCircle size={18} className="shrink-0 text-red-600" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       <SearchFilterBar
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
@@ -177,15 +237,22 @@ export const AdminFaculties = () => {
         filterLabel="Trạng thái"
       />
 
-      <div className="flex-1 mt-4">
-        <DataTable
-          columns={columns}
-          data={filteredFaculties}
-          pageSize={8}
-          emptyText="Không tìm thấy khoa nào"
-          minHeight={400}
-        />
-      </div>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[300px] gap-2.5">
+          <Loader2 className="animate-spin text-blue-600" size={32} />
+          <p className="text-xs text-gray-500 font-semibold">Đang tải danh sách khoa...</p>
+        </div>
+      ) : (
+        <div className="flex-1 mt-4">
+          <DataTable
+            columns={columns}
+            data={filteredFaculties}
+            pageSize={8}
+            emptyText="Không tìm thấy khoa nào"
+            minHeight={400}
+          />
+        </div>
+      )}
 
       <ModalCreateFaculty
         isOpen={showModal}

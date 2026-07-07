@@ -1,39 +1,299 @@
 'use client';
 
-import { Calendar, Eye } from 'lucide-react';
-import { HistoryItem } from '../../types';
-
+import { useState, useEffect } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Calendar, Eye, Loader2, AlertCircle } from 'lucide-react';
+import { API_Student } from '../../api/API_Student';
 
 export const StudentHistory = () => {
-  const history: HistoryItem[] = [
-    {
-      id: '1',
-      semester: 'HK2',
-      academicYear: '2023-2024',
-      submittedAt: '2024-05-15',
-      status: 'faculty_approved',
-      totalScore: 88,
-      rating: 'Xuất sắc',
-    },
-    {
-      id: '2',
-      semester: 'HK1',
-      academicYear: '2023-2024',
-      submittedAt: '2023-12-20',
-      status: 'faculty_approved',
-      totalScore: 82,
-      rating: 'Tốt',
-    },
-    {
-      id: '3',
-      semester: 'HK2',
-      academicYear: '2022-2023',
-      submittedAt: '2023-05-18',
-      status: 'faculty_approved',
-      totalScore: 79,
-      rating: 'Khá',
-    },
-  ];
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Read URL query params on mount
+  const initialYear = searchParams.get('year') || 'all';
+  const initialSemester = searchParams.get('semester') || 'all';
+  const initialPage = parseInt(searchParams.get('page') || '1', 10);
+
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [semesterFilter, setSemesterFilter] = useState<string>(initialSemester);
+  const [yearFilter, setYearFilter] = useState<string>(initialYear);
+  const [currentPage, setCurrentPage] = useState<number>(initialPage);
+
+  const [isChanging, setIsChanging] = useState(false);
+  const [pageSize, setPageSize] = useState(4);
+
+  // Dynamic pageSize based on viewport height to fit exactly without scrolling
+  useEffect(() => {
+    const handleResize = () => {
+      const height = window.innerHeight;
+      if (height < 700) {
+        setPageSize(2);
+      } else if (height < 850) {
+        setPageSize(3);
+      } else {
+        setPageSize(4);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Sync state changes back to URL query parameters
+  const updateUrl = (year: string, semester: string, page: number) => {
+    const params = new URLSearchParams();
+    if (year !== 'all') params.set('year', year);
+    if (semester !== 'all') params.set('semester', semester);
+    if (page > 1) params.set('page', page.toString());
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  useEffect(() => {
+    updateUrl(yearFilter, semesterFilter, currentPage);
+  }, [yearFilter, semesterFilter, currentPage]);
+
+  // Sync URL changes back to states (e.g., on back/forward navigation)
+  useEffect(() => {
+    const year = searchParams.get('year') || 'all';
+    const semester = searchParams.get('semester') || 'all';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    setYearFilter(year);
+    setSemesterFilter(semester);
+    setCurrentPage(page);
+  }, [searchParams]);
+
+  // Fetch evaluations
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken || accessToken === 'mock-access-token') {
+          setHistory([
+            {
+              id: '1',
+              status: 'draft',
+              studentScore: 85,
+              classScore: null,
+              finalScore: null,
+              rank: 'GOOD',
+              submittedAt: null,
+              semester: {
+                year: 2024,
+                semester: 'SEMESTER_1'
+              }
+            },
+            {
+              id: '2',
+              status: 'faculty_approved',
+              studentScore: 88,
+              classScore: 88,
+              finalScore: 88,
+              rank: 'EXCELLENT',
+              submittedAt: '2024-05-15T00:00:00.000Z',
+              semester: {
+                year: 2024,
+                semester: 'SEMESTER_2'
+              }
+            },
+            {
+              id: '3',
+              status: 'faculty_approved',
+              studentScore: 82,
+              classScore: 82,
+              finalScore: 82,
+              rank: 'GOOD',
+              submittedAt: '2023-12-20T00:00:00.000Z',
+              semester: {
+                year: 2023,
+                semester: 'SEMESTER_1'
+              }
+            },
+            {
+              id: '4',
+              status: 'faculty_approved',
+              studentScore: 79,
+              classScore: 79,
+              finalScore: 79,
+              rank: 'FAIR',
+              submittedAt: '2023-05-18T00:00:00.000Z',
+              semester: {
+                year: 2023,
+                semester: 'SEMESTER_2'
+              }
+            },
+            {
+              id: '5',
+              status: 'faculty_approved',
+              studentScore: 75,
+              classScore: 75,
+              finalScore: 75,
+              rank: 'FAIR',
+              submittedAt: '2022-12-22T00:00:00.000Z',
+              semester: {
+                year: 2022,
+                semester: 'SEMESTER_1'
+              }
+            },
+            {
+              id: '6',
+              status: 'faculty_approved',
+              studentScore: 91,
+              classScore: 91,
+              finalScore: 91,
+              rank: 'EXCELLENT',
+              submittedAt: '2022-05-14T00:00:00.000Z',
+              semester: {
+                year: 2022,
+                semester: 'SEMESTER_2'
+              }
+            },
+            {
+              id: '7',
+              status: 'faculty_approved',
+              studentScore: 84,
+              classScore: 84,
+              finalScore: 84,
+              rank: 'GOOD',
+              submittedAt: '2021-12-18T00:00:00.000Z',
+              semester: {
+                year: 2021,
+                semester: 'SEMESTER_1'
+              }
+            },
+            {
+              id: '8',
+              status: 'faculty_approved',
+              studentScore: 68,
+              classScore: 68,
+              finalScore: 68,
+              rank: 'AVERAGE',
+              submittedAt: '2021-05-20T00:00:00.000Z',
+              semester: {
+                year: 2021,
+                semester: 'SEMESTER_2'
+              }
+            },
+            {
+              id: '9',
+              status: 'faculty_approved',
+              studentScore: 72,
+              classScore: 72,
+              finalScore: 72,
+              rank: 'FAIR',
+              submittedAt: '2020-12-19T00:00:00.000Z',
+              semester: {
+                year: 2020,
+                semester: 'SEMESTER_1'
+              }
+            },
+            {
+              id: '10',
+              status: 'faculty_approved',
+              studentScore: 86,
+              classScore: 86,
+              finalScore: 86,
+              rank: 'GOOD',
+              submittedAt: '2020-05-15T00:00:00.000Z',
+              semester: {
+                year: 2020,
+                semester: 'SEMESTER_2'
+              }
+            }
+          ]);
+        } else {
+          const res = await API_Student.getEvaluations(accessToken);
+          const data = res.data || res;
+          setHistory(data || []);
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || 'Không thể tải danh sách phiếu đánh giá');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
+
+  // Filter change handlers (resets page to 1)
+  const handleSemesterChange = (val: string) => {
+    setSemesterFilter(val);
+    setCurrentPage(1);
+  };
+
+  const handleYearChange = (val: string) => {
+    setYearFilter(val);
+    setCurrentPage(1);
+  };
+
+  // Simulate a loading indicator during filter or page updates for visual smoothness
+  useEffect(() => {
+    setIsChanging(true);
+    const t = setTimeout(() => setIsChanging(false), 200);
+    return () => clearTimeout(t);
+  }, [semesterFilter, yearFilter, currentPage, pageSize]);
+
+  // Extract unique academic years dynamically
+  const uniqueYears = Array.from(new Set(
+    history.map(item => {
+      if (item.semester && typeof item.semester === 'object') {
+        return item.semester.year.toString();
+      }
+      return item.academicYear || '';
+    }).filter(Boolean)
+  )).sort((a, b) => b.localeCompare(a));
+
+  // Filters combined with AND logic
+  const filteredHistory = history.filter(item => {
+    if (semesterFilter !== 'all') {
+      const sem = item.semester && typeof item.semester === 'object'
+        ? item.semester.semester
+        : item.semester;
+      if (semesterFilter === 'HK1' && sem !== 'SEMESTER_1' && sem !== 'HK1') return false;
+      if (semesterFilter === 'HK2' && sem !== 'SEMESTER_2' && sem !== 'HK2') return false;
+    }
+    if (yearFilter !== 'all') {
+      const y = item.semester && typeof item.semester === 'object'
+        ? item.semester.year.toString()
+        : item.academicYear;
+      if (y !== yearFilter) return false;
+    }
+    return true;
+  });
+
+  // Sorting logic (Year descending, Semester 2 before Semester 1, submission date descending)
+  const sortedHistory = [...filteredHistory].sort((a, b) => {
+    const yearA = a.semester && typeof a.semester === 'object' ? a.semester.year : parseInt(a.academicYear) || 0;
+    const yearB = b.semester && typeof b.semester === 'object' ? b.semester.year : parseInt(b.academicYear) || 0;
+    if (yearB !== yearA) return yearB - yearA;
+
+    const semA = a.semester && typeof a.semester === 'object' ? a.semester.semester : a.semester;
+    const semB = b.semester && typeof b.semester === 'object' ? b.semester.semester : b.semester;
+    const semWeight = (s: any) => {
+      if (s === 'SEMESTER_2' || s === 'HK2') return 2;
+      if (s === 'SEMESTER_1' || s === 'HK1') return 1;
+      return 0;
+    };
+    if (semWeight(semB) !== semWeight(semA)) {
+      return semWeight(semB) - semWeight(semA);
+    }
+
+    const dateA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+    const dateB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  // Pagination calculation
+  const totalItems = sortedHistory.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const activePage = Math.min(currentPage, totalPages);
+  const startIndex = (activePage - 1) * pageSize;
+  const paginatedHistory = sortedHistory.slice(startIndex, startIndex + pageSize);
 
   const getStatusBadge = (status: string) => {
     const badges = {
@@ -46,71 +306,258 @@ export const StudentHistory = () => {
     return badges[status as keyof typeof badges] || badges.draft;
   };
 
-  const getRatingColor = (rating: string) => {
-    if (rating === 'Xuất sắc') return 'text-green-600';
-    if (rating === 'Tốt') return 'text-blue-600';
-    if (rating === 'Khá') return 'text-purple-600';
-    return 'text-gray-600';
+  const getRankText = (rank: string | null | undefined) => {
+    if (!rank) return 'Chưa xếp loại';
+    const ranks = {
+      EXCELLENT: 'Xuất sắc',
+      GOOD: 'Tốt',
+      FAIR: 'Khá',
+      AVERAGE: 'Trung bình',
+      POOR: 'Yếu',
+      'Xuất sắc': 'Xuất sắc',
+      'Tốt': 'Tốt',
+      'Khá': 'Khá',
+      'Trung bình': 'Trung bình',
+      'Yếu': 'Yếu',
+    };
+    return ranks[rank as keyof typeof ranks] || rank;
   };
 
+  const getRatingColor = (rank: string | null | undefined) => {
+    if (!rank) return 'text-gray-600';
+    const r = rank.toUpperCase();
+    if (r === 'EXCELLENT' || r === 'XUẤT SẮC') return 'text-green-600';
+    if (r === 'GOOD' || r === 'TỐT') return 'text-blue-600';
+    if (r === 'FAIR' || r === 'KHÁ') return 'text-purple-600';
+    return 'text-orange-600';
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <Loader2 className="animate-spin text-blue-600" size={36} />
+        <p className="text-sm text-gray-500">Đang tải danh sách phiếu đánh giá...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 max-w-5xl mx-auto w-full">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex flex-col items-center text-center gap-3">
+          <AlertCircle className="text-red-600" size={40} />
+          <h3 className="text-lg font-bold text-red-800">Đã xảy ra lỗi</h3>
+          <p className="text-sm text-red-600 max-w-md">{error}</p>
+          <button 
+            onClick={() => { setLoading(true); setError(''); window.location.reload(); }}
+            className="mt-2 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition cursor-pointer"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto w-full space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Lịch sử đánh giá</h1>
+    <div className="p-4 sm:p-5 max-w-5xl mx-auto w-full flex-1 flex flex-col overflow-hidden h-[calc(100vh-165px)] lg:h-[calc(100vh-145px)]">
+      {/* Vùng trên: Header & Filter Controls Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-3 shrink-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Lịch sử đánh giá</h1>
+        
+        {/* Filters */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Năm học</span>
+            <select
+              value={yearFilter}
+              onChange={(e) => handleYearChange(e.target.value)}
+              className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer min-h-[32px]"
+            >
+              <option value="all">Tất cả năm</option>
+              {uniqueYears.map(yr => (
+                <option key={yr} value={yr}>{yr}</option>
+              ))}
+            </select>
+          </div>
 
-      <div className="space-y-4">
-        {history.map((item) => {
-          const statusBadge = getStatusBadge(item.status);
-          return (
-            <div key={item.id} className="bg-white rounded-xl shadow-sm border p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                    <Calendar className="text-blue-600" size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-semibold">
-                      {item.semester} - Năm học {item.academicYear}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      Nộp ngày: {new Date(item.submittedAt).toLocaleDateString('vi-VN')}
-                    </p>
-                  </div>
-                </div>
-                <span className={`self-start sm:self-auto px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${statusBadge.class}`}>
-                  {statusBadge.text}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t">
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-600">Tổng điểm</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{item.totalScore}</p>
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-600">Xếp loại</p>
-                  <p className={`text-base sm:text-lg font-semibold mt-1 ${getRatingColor(item.rating)}`}>
-                    {item.rating}
-                  </p>
-                </div>
-                <div className="flex items-end justify-end col-span-2 sm:col-span-1 mt-2 sm:mt-0">
-                  <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 cursor-pointer">
-                    <Eye size={18} />
-                    Xem chi tiết
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Học kỳ</span>
+            <select
+              value={semesterFilter}
+              onChange={(e) => handleSemesterChange(e.target.value)}
+              className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer min-h-[32px]"
+            >
+              <option value="all">Tất cả học kỳ</option>
+              <option value="HK1">Học kỳ I</option>
+              <option value="HK2">Học kỳ II</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {history.length === 0 && (
-        <div className="bg-white rounded-xl shadow-sm border p-12 text-center">
-          <Calendar className="mx-auto mb-4 text-gray-400" size={64} />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có lịch sử đánh giá</h3>
-          <p className="text-gray-600">
-            Bạn chưa nộp phiếu đánh giá nào
-          </p>
+      {/* Vùng giữa: Main List Wrapper (Scrollable if item exceeds) */}
+      <div className="space-y-2.5 overflow-y-auto pr-1 flex-1 py-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+        {isChanging ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3 py-10">
+            <Loader2 className="animate-spin text-blue-600" size={32} />
+            <p className="text-xs text-gray-400">Đang cập nhật danh sách...</p>
+          </div>
+        ) : paginatedHistory.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border p-12 text-center h-full flex flex-col items-center justify-center">
+            <Calendar className="mx-auto mb-4 text-gray-300" size={56} />
+            <h3 className="text-base font-bold text-gray-900 mb-1">Không có phiếu đánh giá phù hợp</h3>
+            <p className="text-xs text-gray-500 max-w-sm mx-auto">
+              Vui lòng thử lại bằng cách chọn năm học hoặc học kỳ khác.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {paginatedHistory.map((item) => {
+              const statusBadge = getStatusBadge(item.status);
+              const totalScore = item.finalScore !== null && item.finalScore !== undefined 
+                ? item.finalScore 
+                : item.classScore !== null && item.classScore !== undefined 
+                ? item.classScore 
+                : item.studentScore;
+
+              return (
+                <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-3.5 transition hover:shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                        <Calendar className="text-blue-600" size={18} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 leading-tight">
+                          {item.semester && typeof item.semester === 'object'
+                            ? `${item.semester.semester === 'SEMESTER_1' ? 'Học kỳ I' : 'Học kỳ II'} — Năm học ${item.semester.year}`
+                            : `${item.semester} — Năm học ${item.academicYear}`}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {item.submittedAt 
+                            ? `Ngày nộp: ${new Date(item.submittedAt).toLocaleDateString('vi-VN')}`
+                            : 'Trạng thái: Chưa nộp'}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`self-start sm:self-auto px-2 py-0.5 rounded-full text-[10px] font-bold ${statusBadge.class}`}>
+                      {statusBadge.text}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2.5 border-t border-gray-100 items-center">
+                    <div>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wide">Tổng điểm</p>
+                      <p className="text-base font-bold text-gray-900 mt-0.5">{totalScore}đ</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wide">Xếp loại</p>
+                      <p className={`text-xs font-bold mt-0.5 ${getRatingColor(item.rank || item.rating)}`}>
+                        {getRankText(item.rank || item.rating)}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-end col-span-2 sm:col-span-1">
+                      <button className="w-full sm:w-auto flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50/50 hover:border-blue-300 transition cursor-pointer">
+                        <Eye size={12} />
+                        Xem chi tiết
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Vùng dưới: Pagination Controls (Fixed bottom) */}
+      {!isChanging && paginatedHistory.length > 0 && totalPages > 1 && (
+        <div className="pt-4 border-t border-gray-100 shrink-0 mt-auto">
+          <div className="flex items-center justify-between bg-white px-4 py-3 sm:px-6 border border-gray-200 rounded-xl shadow-sm">
+            <div className="flex flex-1 justify-between sm:hidden">
+              <button
+                onClick={() => {
+                  if (activePage > 1) {
+                    setCurrentPage(activePage - 1);
+                  }
+                }}
+                disabled={activePage === 1}
+                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+              >
+                Trang trước
+              </button>
+              <span className="text-xs text-gray-700 font-semibold self-center">
+                Trang {activePage} / {totalPages}
+              </span>
+              <button
+                onClick={() => {
+                  if (activePage < totalPages) {
+                    setCurrentPage(activePage + 1);
+                  }
+                }}
+                disabled={activePage === totalPages}
+                className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+              >
+                Trang sau
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs text-gray-700">
+                  Hiển thị bản ghi <span className="font-bold">{startIndex + 1}</span> đến{' '}
+                  <span className="font-bold">{Math.min(startIndex + pageSize, totalItems)}</span> trong tổng số{' '}
+                  <span className="font-bold">{totalItems}</span> phiếu
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => {
+                      if (activePage > 1) {
+                        setCurrentPage(activePage - 1);
+                      }
+                    }}
+                    disabled={activePage === 1}
+                    className="relative inline-flex items-center rounded-l-md px-2.5 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    <span className="text-xs font-bold px-1 text-gray-700">Trước</span>
+                  </button>
+                  
+                  {Array.from({ length: totalPages }).map((_, idx) => {
+                    const pNum = idx + 1;
+                    return (
+                      <button
+                        key={pNum}
+                        onClick={() => {
+                          setCurrentPage(pNum);
+                        }}
+                        className={`relative inline-flex items-center px-3.5 py-2 text-xs font-bold cursor-pointer ring-1 ring-inset ring-gray-300 ${
+                          activePage === pNum
+                            ? 'z-10 bg-blue-600 text-white ring-blue-600'
+                            : 'text-gray-900 bg-white hover:bg-gray-50'
+                        }`}
+                      >
+                        {pNum}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => {
+                      if (activePage < totalPages) {
+                        setCurrentPage(activePage + 1);
+                      }
+                    }}
+                    disabled={activePage === totalPages}
+                    className="relative inline-flex items-center rounded-r-md px-2.5 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    <span className="text-xs font-bold px-1 text-gray-700">Sau</span>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

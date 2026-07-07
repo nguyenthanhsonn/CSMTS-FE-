@@ -1,16 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { mockMajors, mockFaculties } from '../../services/mockData';
-import type { Major, MajorFormValues } from '../../types';
+import { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { API_Admin } from '../../api/API_Admin';
+import type { Faculty, Major, MajorFormValues } from '../../types';
 import ModalCreateMajor from '../../components/admin/modelCreateMajor';
 import ModalConfirm from '../../components/common/modalConfirm';
 import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import DataTable, { type Column } from '../../components/admin/DataTable';
 
 export const AdminMajors = () => {
-  const [majors, setMajors] = useState<Major[]>(mockMajors);
+  const [majors, setMajors] = useState<Major[]>([]);
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingMajor, setEditingMajor] = useState<Major | null>(null);
@@ -19,6 +24,43 @@ export const AdminMajors = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const [facultyFilter, setFacultyFilter] = useState('');
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setErrorMsg('');
+      const [facs, majs] = await Promise.all([
+        API_Admin.getFaculties(),
+        API_Admin.getMajors(),
+      ]);
+
+      const normalizedFacs: Faculty[] = (facs || []).map((f: any) => ({
+        id: f.id,
+        code: f.code || '',
+        name: f.name || '',
+        isActive: f.isActive ?? true,
+      }));
+
+      const normalizedMajs: Major[] = (majs || []).map((m: any) => ({
+        id: m.id,
+        code: m.code || '',
+        name: m.name || '',
+        facultyId: m.facultyId || '',
+        isActive: m.isActive ?? true,
+      }));
+
+      setFaculties(normalizedFacs);
+      setMajors(normalizedMajs);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Không thể tải danh sách dữ liệu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const filteredMajors = majors.filter((m) => {
     const matchSearch =
@@ -34,16 +76,30 @@ export const AdminMajors = () => {
     setConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (pendingDeleteId) {
-      setMajors((prev) => prev.filter((m) => m.id !== pendingDeleteId));
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteId || actionLoading) return;
+
+    try {
+      setActionLoading(true);
+      setErrorMsg('');
+      await API_Admin.deleteMajor(pendingDeleteId);
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
+      await loadData();
+    } catch (err: any) {
+      setErrorMsg(
+        err.message || 
+        'Không thể xóa ngành học này. Ngành có thể đã có lớp học hoặc phân công hội đồng liên kết.'
+      );
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
+    } finally {
+      setActionLoading(false);
     }
-    setConfirmOpen(false);
-    setPendingDeleteId(null);
   };
 
   const getFacultyName = (facultyId: string) => {
-    return mockFaculties.find((f) => f.id === facultyId)?.name || '';
+    return faculties.find((f) => f.id === facultyId)?.name || '';
   };
 
   const handleOpenModal = (major?: Major) => {
@@ -60,24 +116,24 @@ export const AdminMajors = () => {
     setEditingMajor(null);
   };
 
-  const handleSubmitModal = (values: MajorFormValues) => {
-    if (editingMajor) {
-      setMajors((prev) =>
-        prev.map((m) =>
-          m.id === editingMajor.id
-            ? { ...m, code: values.code, name: values.name, facultyId: values.facultyId }
-            : m
-        )
-      );
-    } else {
-      const newMajor: Major = {
-        id: Date.now().toString(),
-        code: values.code,
-        name: values.name,
-        facultyId: values.facultyId,
-        isActive: true,
-      };
-      setMajors((prev) => [...prev, newMajor]);
+  const handleSubmitModal = async (values: MajorFormValues) => {
+    if (actionLoading) return;
+
+    try {
+      setActionLoading(true);
+      setErrorMsg('');
+      if (editingMajor) {
+        await API_Admin.updateMajor(editingMajor.id, values);
+      } else {
+        await API_Admin.createMajor(values);
+      }
+      setShowModal(false);
+      setEditingMajor(null);
+      await loadData();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Lỗi lưu thông tin ngành học. Vui lòng kiểm tra lại mã ngành.');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -127,7 +183,7 @@ export const AdminMajors = () => {
 
   const facultyFilterOptions = [
     { label: 'Tất cả', value: '' },
-    ...mockFaculties
+    ...faculties
       .filter((f) => f.isActive)
       .map((f) => ({ label: f.name, value: f.id })),
   ];
@@ -145,6 +201,13 @@ export const AdminMajors = () => {
         </button>
       </div>
 
+      {errorMsg && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-xs sm:text-sm font-semibold">
+          <AlertCircle size={18} className="shrink-0 text-red-600" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       <SearchFilterBar
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
@@ -155,21 +218,29 @@ export const AdminMajors = () => {
         filterLabel="Khoa"
       />
 
-      <div className="flex-1 mt-4">
-        <DataTable
-          columns={columns}
-          data={filteredMajors}
-          pageSize={8}
-          emptyText="Không tìm thấy ngành học nào"
-          minHeight={400}
-        />
-      </div>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[300px] gap-2.5">
+          <Loader2 className="animate-spin text-blue-600" size={32} />
+          <p className="text-xs text-gray-500 font-semibold">Đang tải danh sách ngành học...</p>
+        </div>
+      ) : (
+        <div className="flex-1 mt-4">
+          <DataTable
+            columns={columns}
+            data={filteredMajors}
+            pageSize={8}
+            emptyText="Không tìm thấy ngành học nào"
+            minHeight={400}
+          />
+        </div>
+      )}
 
       <ModalCreateMajor
         isOpen={showModal}
         onClose={handleCloseModal}
         onSubmit={handleSubmitModal}
         editData={editingMajor}
+        faculties={faculties}
       />
 
       <ModalConfirm

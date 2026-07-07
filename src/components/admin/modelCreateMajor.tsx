@@ -4,14 +4,14 @@ import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { X, Hash, BookOpen, Building2 } from 'lucide-react';
-import { mockFaculties } from '../../services/mockData';
-import type { Major, MajorFormValues } from '../../types';
+import type { Faculty, Major, MajorFormValues } from '../../types';
 
 interface ModalCreateMajorProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (values: MajorFormValues) => void;
   editData?: Major | null;
+  faculties?: Faculty[];
 }
 
 const validationSchema = Yup.object({
@@ -35,6 +35,7 @@ export default function ModalCreateMajor({
   onClose,
   onSubmit,
   editData,
+  faculties = [],
 }: ModalCreateMajorProps) {
   const isEdit = !!editData;
 
@@ -145,7 +146,7 @@ export default function ModalCreateMajor({
               </label>
               <select className={inputCls('facultyId')} {...formik.getFieldProps('facultyId')}>
                 <option value="">-- Chọn khoa --</option>
-                {mockFaculties
+                {faculties
                   .filter((f) => f.isActive)
                   .map((f) => (
                     <option key={f.id} value={f.id}>{f.name}</option>

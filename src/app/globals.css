@@ -182,3 +182,21 @@ body {
     background: var(--color-primary-bg);
   }
 }
+
+/* Fix native select/option responsive bugs on touch devices & emulators */
+@media (max-width: 768px) {
+  main select, 
+  select {
+    height: auto !important;
+    min-height: 40px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+}
+
+/* Restrict option custom styles to prevent weird browser dark/light conflicts */
+select option {
+  background-color: #ffffff !important;
+  color: #1a1b1e !important;
+  font-size: 14px !important;
+}

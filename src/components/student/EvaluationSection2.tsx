@@ -1,6 +1,168 @@
 'use client';
 
-import { ChevronUp, ChevronDown, Plus, Minus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronUp, ChevronDown, Plus, Minus, Lock, AlertCircle } from 'lucide-react';
+
+const DEDUCTION_WEIGHTS = [10, 3, 5, 5, 5, 5, 5, 10, 20];
+
+interface DeductionStepperProps {
+  isSv: boolean;
+  index: number;
+  value: number;
+  onChange: (val: number) => void;
+  disabled: boolean;
+  weight: number;
+  noViolationScore: number;
+  allDeductions: number[];
+  currentUserRole: 'student' | 'class';
+  isReadOnly: boolean;
+}
+
+const DeductionStepper = ({
+  isSv,
+  index,
+  value,
+  onChange,
+  disabled,
+  weight,
+  noViolationScore,
+  allDeductions,
+  currentUserRole,
+  isReadOnly
+}: DeductionStepperProps) => {
+  // Tính tổng điểm trừ của các lỗi khác
+  const sumOtherDeductions = allDeductions.reduce((sum, count, idx) => {
+    if (idx === index) return sum;
+    return sum + (Number(count) || 0) * DEDUCTION_WEIGHTS[idx];
+  }, 0);
+
+  // Điểm còn lại trước khi trừ lỗi này
+  const remainingScore = Math.max(0, noViolationScore - sumOtherDeductions);
+
+  // Số lần tối đa được phép nhập cho lỗi này
+  const maxTimes = Math.floor(remainingScore / weight);
+
+  // Vô hiệu hóa nút +
+  const disabledPlus = disabled || value >= maxTimes;
+  // Vô hiệu hóa nút -
+  const disabledMinus = disabled || value <= 0;
+
+  // Quản lý state nhập liệu cục bộ dạng string để hỗ trợ gõ tay và xóa trống
+  const [localVal, setLocalVal] = useState<string>(String(value));
+
+  useEffect(() => {
+    setLocalVal(String(value));
+  }, [value]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valStr = e.target.value;
+    // Chỉ nhận chuỗi số
+    if (/^\d*$/.test(valStr)) {
+      setLocalVal(valStr);
+    }
+  };
+
+  const handleBlurOrEnter = () => {
+    let num = parseInt(localVal, 10);
+    if (isNaN(num)) {
+      num = 0;
+    }
+    // Giới hạn trong khoảng [0, maxTimes]
+    const clamped = Math.min(maxTimes, Math.max(0, num));
+    setLocalVal(String(clamped));
+    onChange(clamped);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleBlurOrEnter();
+      e.currentTarget.blur();
+    }
+  };
+
+  const handleIncrement = () => {
+    if (value < maxTimes) {
+      onChange(value + 1);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (value > 0) {
+      onChange(value - 1);
+    }
+  };
+
+  // Tooltip giải thích khi bị khóa cột do vai trò
+  const isColumnRoleLocked = disabled && !isReadOnly && (
+    (currentUserRole === 'student' && !isSv) || (currentUserRole === 'class' && isSv)
+  );
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={`text-[10px] font-bold ${isSv ? 'text-blue-600' : 'text-indigo-600'}`}>
+        {isSv ? 'SV lần:' : 'Lớp lần:'}
+      </span>
+      
+      {isColumnRoleLocked ? (
+        <div className="relative group flex items-center justify-center">
+          <div className="flex items-center gap-1 bg-gray-100 text-gray-500 border border-gray-200 rounded-lg px-2 py-1.5 h-8 select-none">
+            <Lock size={12} className="text-gray-400 shrink-0" />
+            <span className="text-[11px] font-semibold">{value}</span>
+          </div>
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-[10px] p-2 rounded-lg shadow-lg w-48 text-center z-20 leading-relaxed font-medium">
+            {currentUserRole === 'student'
+              ? 'Cột của Lớp trưởng/BCS đánh giá (đang tự động đồng bộ theo bạn).'
+              : 'Cột tự đánh giá của Sinh viên (Lớp trưởng không được sửa).'}
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center relative">
+          {/* Nút Decrement */}
+          <button
+            type="button"
+            onClick={handleDecrement}
+            disabled={disabledMinus}
+            className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-l-lg hover:bg-gray-100 text-gray-600 disabled:opacity-40 disabled:hover:bg-transparent min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 transition duration-150 cursor-pointer"
+          >
+            <Minus size={12} />
+          </button>
+
+          {/* Input gõ tay */}
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={localVal}
+            onChange={handleInputChange}
+            onBlur={handleBlurOrEnter}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            className="w-12 h-8 text-center text-xs border-y border-gray-300 outline-none bg-white font-bold text-gray-800 disabled:bg-gray-100 disabled:text-gray-400 transition"
+          />
+
+          {/* Nút Increment */}
+          <div className="relative group">
+            <button
+              type="button"
+              onClick={handleIncrement}
+              disabled={disabledPlus}
+              className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-r-lg hover:bg-gray-100 text-gray-600 disabled:opacity-40 disabled:hover:bg-transparent min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 transition duration-150 cursor-pointer"
+            >
+              <Plus size={12} />
+            </button>
+            
+            {disabledPlus && !disabled && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2.5 hidden group-hover:flex bg-red-600 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-lg whitespace-nowrap z-20 font-bold items-center gap-1">
+                <AlertCircle size={10} />
+                Đã đạt số lần tối đa, điểm Mục II không thể âm
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface EvaluationSection2Props {
   expanded: boolean;
@@ -26,6 +188,7 @@ interface EvaluationSection2Props {
   setIsSvViolationSec2: (val: boolean) => void;
   isClassViolationSec2: boolean;
   setIsClassViolationSec2: (val: boolean) => void;
+  isReadOnly?: boolean;
 }
 
 export const EvaluationSection2 = ({
@@ -46,7 +209,8 @@ export const EvaluationSection2 = ({
   isSvViolationSec2,
   setIsSvViolationSec2,
   isClassViolationSec2,
-  setIsClassViolationSec2
+  setIsClassViolationSec2,
+  isReadOnly = false
 }: EvaluationSection2Props) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -157,64 +321,32 @@ export const EvaluationSection2 = ({
                   
                   <div className="flex items-center gap-3 shrink-0">
                     {/* SV Violation count */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-blue-600">SV lần:</span>
-                      <div className="flex items-center">
-                        <button
-                          type="button"
-                          onClick={() => handleDeductionChange(true, index, svDeductions[index] - 1)}
-                          disabled={currentUserRole !== 'student' || isSvViolationSec2}
-                          className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-l-lg hover:bg-gray-100 text-gray-600 disabled:opacity-50 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
-                        >
-                          <Minus size={12} />
-                        </button>
-                        <input
-                          type="number"
-                          value={svDeductions[index]}
-                          onChange={(e) => handleDeductionChange(true, index, parseInt(e.target.value) || 0)}
-                          disabled={currentUserRole !== 'student' || isSvViolationSec2}
-                          className="w-12 h-8 text-center text-xs border-y border-gray-300 outline-none bg-white disabled:bg-gray-100 disabled:text-gray-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleDeductionChange(true, index, svDeductions[index] + 1)}
-                          disabled={currentUserRole !== 'student' || isSvViolationSec2}
-                          className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-r-lg hover:bg-gray-100 text-gray-600 disabled:opacity-50 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
-                        >
-                          <Plus size={12} />
-                        </button>
-                      </div>
-                    </div>
+                    <DeductionStepper
+                      isSv={true}
+                      index={index}
+                      value={svDeductions[index]}
+                      onChange={(val) => handleDeductionChange(true, index, val)}
+                      disabled={currentUserRole !== 'student' || isSvViolationSec2 || isReadOnly}
+                      weight={DEDUCTION_WEIGHTS[index]}
+                      noViolationScore={svNoViolationScore}
+                      allDeductions={svDeductions}
+                      currentUserRole={currentUserRole}
+                      isReadOnly={isReadOnly}
+                    />
 
                     {/* Class Violation count */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-indigo-600">Lớp lần:</span>
-                      <div className="flex items-center">
-                        <button
-                          type="button"
-                          onClick={() => handleDeductionChange(false, index, classDeductions[index] - 1)}
-                          disabled={currentUserRole !== 'class' || isClassViolationSec2}
-                          className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-l-lg hover:bg-gray-100 text-gray-600 disabled:opacity-50 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
-                        >
-                          <Minus size={12} />
-                        </button>
-                        <input
-                          type="number"
-                          value={classDeductions[index]}
-                          onChange={(e) => handleDeductionChange(false, index, parseInt(e.target.value) || 0)}
-                          disabled={currentUserRole !== 'class' || isClassViolationSec2}
-                          className="w-12 h-8 text-center text-xs border-y border-gray-300 outline-none bg-white disabled:bg-gray-100 disabled:text-gray-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleDeductionChange(false, index, classDeductions[index] + 1)}
-                          disabled={currentUserRole !== 'class' || isClassViolationSec2}
-                          className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-r-lg hover:bg-gray-100 text-gray-600 disabled:opacity-50 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
-                        >
-                          <Plus size={12} />
-                        </button>
-                      </div>
-                    </div>
+                    <DeductionStepper
+                      isSv={false}
+                      index={index}
+                      value={classDeductions[index]}
+                      onChange={(val) => handleDeductionChange(false, index, val)}
+                      disabled={currentUserRole !== 'class' || isClassViolationSec2 || isReadOnly}
+                      weight={DEDUCTION_WEIGHTS[index]}
+                      noViolationScore={classNoViolationScore}
+                      allDeductions={classDeductions}
+                      currentUserRole={currentUserRole}
+                      isReadOnly={isReadOnly}
+                    />
                   </div>
                 </div>
               ))}

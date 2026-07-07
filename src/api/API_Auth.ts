@@ -1,63 +1,55 @@
-import { request } from './api';
+import { get, post } from './api';
+
+import type {
+  CaptchaResponse,
+  ChangePasswordPayload,
+  LoginPayload,
+  LoginResponse,
+  RefreshTokenResponse,
+  User,
+} from '../types';
+
+/** Lấy mã xác nhận khi đăng nhập. */
+async function getCaptcha() {
+  return get<CaptchaResponse>('/auth/captcha');
+}
+
+/** Đăng nhập tài khoản. */
+async function login(email: string, password: string) {
+  return post<LoginResponse>('/auth/login', { email, password } satisfies LoginPayload);
+}
+
+/** Lấy thông tin tài khoản hiện tại. */
+async function getMe() {
+  return get<User>('/auth/me');
+}
+
+/** Giữ phiên đăng nhập hoạt động. */
+async function refreshToken(refreshToken: string) {
+  return post<RefreshTokenResponse>('/auth/refresh-token', { refreshToken });
+}
+
+/** Đăng xuất tài khoản. */
+async function logout(refreshToken: string, _accessToken?: string) {
+  return post<null>('/auth/logout', { refreshToken });
+}
+
+/** Đổi mật khẩu tài khoản. */
+async function changePassword(_accessToken: string, currentPassword: string, newPassword: string) {
+  return post<null>('/auth/change-password', { currentPassword, newPassword } satisfies ChangePasswordPayload);
+}
+
+/** Lấy thông tin tài khoản cho màn cũ. */
+async function getProfile(_accessToken?: string) {
+  return getMe();
+}
 
 export const API_Auth = {
-  login: async (email: string, password: string) => {
-    return request<any>(
-      '/auth/login',
-      {
-        method: 'POST',
-        body: { email, password },
-      },
-      'đăng nhập tài khoản'
-    );
-  },
-
-  getProfile: async (accessToken: string) => {
-    return request<any>(
-      '/auth/me',
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-      'lấy thông tin tài khoản'
-    );
-  },
-
-  refreshToken: async (refreshToken: string) => {
-    return request<any>(
-      '/auth/refresh-token',
-      {
-        method: 'POST',
-        body: { refreshToken },
-      },
-      'làm mới phiên đăng nhập'
-    );
-  },
-
-  logout: async (refreshToken: string) => {
-    return request<any>(
-      '/auth/logout',
-      {
-        method: 'POST',
-        body: { refreshToken },
-      },
-      'đăng xuất tài khoản'
-    );
-  },
-
-  changePassword: async (accessToken: string, currentPassword: string, newPassword: string) => {
-    return request<any>(
-      '/auth/change-password',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: { currentPassword, newPassword },
-      },
-      'đổi mật khẩu'
-    );
-  },
+  getCaptcha,
+  login,
+  getMe,
+  getProfile,
+  refreshToken,
+  logout,
+  changePassword,
 };

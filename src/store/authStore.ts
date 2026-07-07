@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { AuthState } from '../types';
 
 import { API_Auth } from '../api/API_Auth';
+import { API_Student } from '../api/API_Student';
+import type { Student, Admin } from '../types';
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -20,7 +22,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       // Fetch profile using the token
       const profileRes = await API_Auth.getProfile(accessToken);
-      const user = profileRes.data || profileRes;
+      let user = profileRes.data || profileRes;
+
+      // If user is a student, fetch their detailed student profile
+      if (user.role === 'student') {
+        try {
+          const studentProfileRes = await API_Student.getProfile(accessToken);
+          const studentProfile = studentProfileRes.data || studentProfileRes;
+          user = { ...user, ...studentProfile };
+        } catch (studentErr) {
+          console.error('Failed to fetch detailed student profile:', studentErr);
+        }
+      }
 
       set({ user, isAuthenticated: true });
       localStorage.setItem('user', JSON.stringify(user));
@@ -46,7 +59,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         className: 'CNTT K18',
         dateOfBirth: '2003-01-01',
         phoneNumber: '0987654321',
-        admissionYear: '2021',
+        admissionYear: 2021,
         isActive: true,
       };
       set({ user: mockStudent, isAuthenticated: true });
@@ -71,8 +84,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     try {
       const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        await API_Auth.logout(refreshToken);
+      const accessToken = localStorage.getItem('accessToken');
+      if (refreshToken && refreshToken !== 'mock-refresh-token') {
+        await API_Auth.logout(refreshToken, accessToken || undefined);
       }
     } catch (error) {
       console.error('Logout error:', error);
@@ -83,10 +97,45 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.removeItem('refreshToken');
     }
   },
-  updateProfile: (data) => {
+  updateProfile: async (data: Partial<Student | Admin>) => {
+    const accessToken = localStorage.getItem('accessToken');
+    
+    // Check if it is a real token or mock
+    if (accessToken && accessToken !== 'mock-access-token' && useAuthStore.getState().user?.role === 'student') {
+      const phone = (data as Student).phone || (data as Student).phoneNumber;
+      if (phone) {
+        try {
+          const updateRes = await API_Student.updateProfile(accessToken, phone);
+          const updatedProfile = updateRes.data || updateRes;
+          
+          set((state) => ({
+            user: state.user ? { ...state.user, ...updatedProfile } : null,
+          }));
+          
+          // Also update localStorage
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            localStorage.setItem('user', JSON.stringify({ ...parsedUser, ...updatedProfile }));
+          }
+          return;
+        } catch (error) {
+          console.error('Update profile API error:', error);
+          throw error;
+        }
+      }
+    }
+    
+    // Fallback/Mock local update
     set((state) => ({
       user: state.user ? { ...state.user, ...data } : null,
     }));
+    
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      localStorage.setItem('user', JSON.stringify({ ...parsedUser, ...data }));
+    }
   },
 }));
 

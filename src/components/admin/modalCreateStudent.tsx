@@ -4,15 +4,16 @@ import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { X, User, Lock, Mail, Phone, Calendar, BookOpen, Building2, School, GraduationCap } from 'lucide-react';
-import { mockFaculties, mockMajors, mockClasses } from '../../services/mockData';
-
-import type { StudentFormValues } from '../../types';
+import type { Class, Faculty, Major, StudentFormValues } from '../../types';
 
 interface ModalCreateStudentProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (values: StudentFormValues) => void;
   editData?: StudentFormValues | null;
+  faculties?: Faculty[];
+  majors?: Major[];
+  classes?: Class[];
 }
 
 const currentYear = new Date().getFullYear();
@@ -64,6 +65,9 @@ export default function ModalCreateStudent({
   onClose,
   onSubmit,
   editData,
+  faculties = [],
+  majors = [],
+  classes = [],
 }: ModalCreateStudentProps) {
   const isEdit = !!editData;
 
@@ -88,8 +92,8 @@ export default function ModalCreateStudent({
   }, [isOpen, editData]);
 
   // Lọc ngành theo khoa, lớp theo ngành
-  const filteredMajors = mockMajors.filter((m) => m.facultyId === formik.values.facultyId);
-  const filteredClasses = mockClasses.filter(
+  const filteredMajors = majors.filter((m) => m.facultyId === formik.values.facultyId);
+  const filteredClasses = classes.filter(
     (c) => c.facultyId === formik.values.facultyId && c.majorId === formik.values.majorId
   );
 
@@ -269,7 +273,7 @@ export default function ModalCreateStudent({
                     onChange={handleFacultyChange}
                   >
                     <option value="">-- Chọn khoa --</option>
-                    {mockFaculties.map((f) => (
+                    {faculties.map((f) => (
                       <option key={f.id} value={f.id}>{f.name}</option>
                     ))}
                   </select>

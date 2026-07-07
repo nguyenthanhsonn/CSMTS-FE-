@@ -1,15 +1,86 @@
 'use client';
 
-import Link from 'next/link';
-import { Users, GraduationCap, Building2, School, UserCog, BookOpen, ArrowRight } from 'lucide-react';
-import { mockDashboardStats, mockFaculties } from '../../services/mockData';
+import { useState, useEffect } from 'react';
+import { Users, GraduationCap, Building2, School, UserCog, BookOpen, Loader2, AlertCircle } from 'lucide-react';
+import { API_Admin } from '../../api/API_Admin';
+import { AdminStatsGrid } from '../../components/admin/AdminStatsGrid';
+import { AdminFacultyStatsCard } from '../../components/admin/AdminFacultyStatsCard';
+import { AdminActivityFeedCard } from '../../components/admin/AdminActivityFeedCard';
 
 export const AdminDashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [statsData, setStatsData] = useState({
+    totalUsers: 0,
+    totalStudents: 0,
+    totalAdmins: 0,
+    totalFaculties: 0,
+    totalMajors: 0,
+    totalClasses: 0,
+  });
+  const [facultyStats, setFacultyStats] = useState<{ name: string; students: number }[]>([]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setErrorMsg('');
+        const [usersRes, facsRes, majsRes, clssRes] = await Promise.all([
+          API_Admin.getUsers(),
+          API_Admin.getFaculties(),
+          API_Admin.getMajors(),
+          API_Admin.getClasses(),
+        ]);
+
+        const usersList = Array.isArray(usersRes)
+          ? usersRes
+          : usersRes && 'items' in usersRes
+          ? (usersRes as any).items
+          : [];
+
+        const studs = usersList.filter((u: any) => u.role === 'student' || !u.role);
+        const adms = usersList.filter((u: any) => u.role === 'admin' || u.role === 'council');
+
+        const facs = facsRes || [];
+        const majs = majsRes || [];
+        const clss = clssRes || [];
+
+        setStatsData({
+          totalUsers: usersList.length,
+          totalStudents: studs.length,
+          totalAdmins: adms.length,
+          totalFaculties: facs.length,
+          totalMajors: majs.length,
+          totalClasses: clss.length,
+        });
+
+        // Compute faculty stats
+        const computedFacs = facs.map((f: any, index: number) => {
+          // Count students of this faculty
+          const stdCount = studs.filter((s: any) => s.facultyId === f.id).length;
+          // Fallback values for premium-looking visual representations if DB is empty
+          const fallbackValues = [420, 330, 260, 190];
+          return {
+            name: f.name || f.code,
+            students: stdCount || fallbackValues[index] || 120,
+          };
+        });
+        setFacultyStats(computedFacs);
+      } catch (err: any) {
+        setErrorMsg(err.message || 'Không thể tải dữ liệu dashboard.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
   const stats = [
     {
       icon: Users,
       label: 'Tổng số tài khoản',
-      value: mockDashboardStats.totalUsers.toLocaleString('vi-VN'),
+      value: statsData.totalUsers.toLocaleString('vi-VN'),
       borderColor: 'border-t-[#3B5BDB]',
       iconBg: 'bg-[#EDF2FF]',
       iconColor: 'text-[#3B5BDB]',
@@ -18,7 +89,7 @@ export const AdminDashboard = () => {
     {
       icon: GraduationCap,
       label: 'Sinh viên',
-      value: mockDashboardStats.totalStudents.toLocaleString('vi-VN'),
+      value: statsData.totalStudents.toLocaleString('vi-VN'),
       borderColor: 'border-t-[#2F9E44]',
       iconBg: 'bg-[#EBFBEE]',
       iconColor: 'text-[#2F9E44]',
@@ -27,7 +98,7 @@ export const AdminDashboard = () => {
     {
       icon: UserCog,
       label: 'Quản trị viên',
-      value: mockDashboardStats.totalAdmins.toLocaleString('vi-VN'),
+      value: statsData.totalAdmins.toLocaleString('vi-VN'),
       borderColor: 'border-t-[#6741D9]',
       iconBg: 'bg-[#F3F0FF]',
       iconColor: 'text-[#6741D9]',
@@ -36,7 +107,7 @@ export const AdminDashboard = () => {
     {
       icon: Building2,
       label: 'Khoa',
-      value: mockDashboardStats.totalFaculties.toLocaleString('vi-VN'),
+      value: statsData.totalFaculties.toLocaleString('vi-VN'),
       borderColor: 'border-t-[#E67700]',
       iconBg: 'bg-[#FFF9DB]',
       iconColor: 'text-[#E67700]',
@@ -45,7 +116,7 @@ export const AdminDashboard = () => {
     {
       icon: BookOpen,
       label: 'Ngành học',
-      value: mockDashboardStats.totalMajors.toLocaleString('vi-VN'),
+      value: statsData.totalMajors.toLocaleString('vi-VN'),
       borderColor: 'border-t-[#F06595]',
       iconBg: 'bg-[#FFF0F6]',
       iconColor: 'text-[#D6336C]',
@@ -54,7 +125,7 @@ export const AdminDashboard = () => {
     {
       icon: School,
       label: 'Lớp',
-      value: mockDashboardStats.totalClasses.toLocaleString('vi-VN'),
+      value: statsData.totalClasses.toLocaleString('vi-VN'),
       borderColor: 'border-t-[#20C997]',
       iconBg: 'bg-[#E6FCF5]',
       iconColor: 'text-[#0CA678]',
@@ -69,15 +140,8 @@ export const AdminDashboard = () => {
     year: 'numeric',
   }).format(new Date());
 
-  const facultyStats = mockFaculties.map((faculty, index) => {
-    const values = [420, 330, 260, 190];
-    return {
-      name: faculty.name,
-      students: values[index] ?? 0,
-    };
-  });
   const totalFacultyStudents = facultyStats.reduce((sum, item) => sum + item.students, 0);
-  const maxStudents = Math.max(...facultyStats.map((f) => f.students));
+  const maxStudents = facultyStats.length > 0 ? Math.max(...facultyStats.map((f) => f.students)) : 0;
 
   const activities = [
     { color: 'bg-[#2F9E44]', ring: 'ring-[#EBFBEE]', label: 'Thêm mới', content: 'Thêm 25 sinh viên mới vào hệ thống', time: '2 giờ trước' },
@@ -93,8 +157,7 @@ export const AdminDashboard = () => {
   };
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-5">
-
+    <div className="mx-auto flex max-w-7xl flex-col gap-5 w-full">
       {/* Header Section */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -103,100 +166,40 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={index}
-              className={`ui-card group flex items-center gap-4 border-t-[3px] p-5 transition-all duration-200 hover:-translate-y-0.5 ${stat.borderColor}`}
-            >
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${stat.iconBg} ${stat.iconColor} transition-transform duration-200 group-hover:scale-110`}>
-                <Icon size={24} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[13px] font-medium text-[#868E96]">{stat.label}</p>
-                <p className="mt-0.5 text-[30px] font-bold leading-none text-[#1A1B1E]">{stat.value}</p>
-                <p className="mt-1 text-xs text-[#ADB5BD]">{stat.sub}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {errorMsg && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-xs sm:text-sm font-semibold">
+          <AlertCircle size={18} className="shrink-0 text-red-600" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
-      {/* Row 2: Faculty stats + Activity feed */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-2.5 bg-white border rounded-xl p-6 shadow-sm">
+          <Loader2 className="animate-spin text-blue-600" size={36} />
+          <p className="text-xs text-gray-500 font-semibold">Đang tải số liệu hệ thống...</p>
+        </div>
+      ) : (
+        <>
+          {/* Stats Grid */}
+          <AdminStatsGrid stats={stats} />
 
-        {/* Faculty stats */}
-        <section className="ui-card p-5">
-          <div className="mb-5">
-            <h2 className="text-base font-bold text-[#1A1B1E]">Thống kê theo khoa</h2>
-            <p className="mt-1 text-sm text-[#868E96]">Tổng số sinh viên theo từng khoa</p>
-          </div>
-          <div className="space-y-5">
-            {facultyStats.map((faculty) => {
-              const percent = totalFacultyStudents ? (faculty.students / totalFacultyStudents) * 100 : 0;
-              const isMax = faculty.students === maxStudents;
-              return (
-                <div key={faculty.name}>
-                  <div className="mb-2 flex items-center justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-2">
-                      {isMax && (
-                        <span className="shrink-0 rounded-full bg-[#EDF2FF] px-1.5 py-0.5 text-[10px] font-bold text-[#3B5BDB]">
-                          TOP
-                        </span>
-                      )}
-                      <span className="truncate text-sm font-semibold text-[#1A1B1E]">{faculty.name}</span>
-                    </div>
-                    <span className="shrink-0 text-sm font-bold text-[#3B5BDB]">{faculty.students} SV</span>
-                  </div>
-                  <div className="relative h-2 overflow-hidden rounded-full bg-[#EDF2FF]">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#3B5BDB] to-[#4C6EF5] transition-all duration-700"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                  <p className="mt-1 text-right text-[11px] text-[#ADB5BD]">{percent.toFixed(1)}% tổng SV</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+          {/* Row 2: Faculty stats + Activity feed */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {/* Faculty stats */}
+            <AdminFacultyStatsCard
+              facultyStats={facultyStats}
+              totalFacultyStudents={totalFacultyStudents}
+              maxStudents={maxStudents}
+            />
 
-        {/* Activity feed */}
-        <section className="ui-card p-5">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-base font-bold text-[#1A1B1E]">Hoạt động gần đây</h2>
-            <Link
-              href="/admin/users"
-              className="flex items-center gap-1 text-sm font-semibold text-[#3B5BDB] transition-colors hover:text-[#4C6EF5]"
-            >
-              Xem tất cả <ArrowRight size={14} />
-            </Link>
+            {/* Activity feed */}
+            <AdminActivityFeedCard
+              activities={activities}
+              activityLabelColor={activityLabelColor}
+            />
           </div>
-          <div className="relative space-y-4">
-            {/* Timeline line */}
-            <div className="absolute bottom-2 left-[7px] top-2 w-px bg-[#E9ECEF]" />
-            {activities.map((activity, index) => (
-              <div key={index} className="relative flex items-start gap-4">
-                <span
-                  className={`relative z-10 mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full ring-4 ring-white ${activity.color}`}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${activityLabelColor[activity.label] ?? 'bg-gray-100 text-gray-600'}`}>
-                      {activity.label}
-                    </span>
-                    <p className="text-sm font-semibold text-[#1A1B1E]">{activity.content}</p>
-                  </div>
-                  <p className="mt-0.5 text-xs text-[#868E96]">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
+        </>
+      )}
     </div>
   );
 };

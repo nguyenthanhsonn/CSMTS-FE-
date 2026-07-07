@@ -1,6 +1,7 @@
 'use client';
 
 import { User, ChevronUp, ChevronDown } from 'lucide-react';
+import { CustomSelect } from '../common/CustomSelect';
 
 const admissionYears = ['2020', '2021', '2022', '2023', '2024'];
 const mockFaculties = [
@@ -94,123 +95,106 @@ export const EvaluationHeaderSection = ({
       {expanded && (
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Năm trúng tuyển *</label>
-              <select
-                value={admissionYear}
-                onChange={(e) => setAdmissionYear(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
-              >
-                {admissionYears.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
+            
+            {/* Field: Năm trúng tuyển */}
+            <CustomSelect
+              value={admissionYear}
+              onChange={(val) => setAdmissionYear(val)}
+              options={admissionYears.map(year => ({ id: year, name: year }))}
+              label="Năm trúng tuyển *"
+            />
 
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Khoa quản lý *</label>
-              <select
-                value={facultyId}
-                onChange={(e) => setFacultyId(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
-              >
-                {mockFaculties.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
-            </div>
+            {/* Field: Khoa quản lý */}
+            <CustomSelect
+              value={facultyId}
+              onChange={(val) => setFacultyId(val)}
+              options={mockFaculties}
+              label="Khoa quản lý *"
+            />
 
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Ngành học *</label>
-              <select
-                value={majorId}
-                onChange={(e) => setMajorId(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
-              >
-                {mockMajors.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
+            {/* Field: Ngành học */}
+            <CustomSelect
+              value={majorId}
+              onChange={(val) => setMajorId(val)}
+              options={mockMajors}
+              label="Ngành học *"
+            />
 
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Lớp học *</label>
-              <select
-                value={classId}
-                onChange={(e) => setClassId(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
-              >
-                {mockClasses.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
+            {/* Field: Lớp học */}
+            <CustomSelect
+              value={classId}
+              onChange={(val) => setClassId(val)}
+              options={mockClasses}
+              label="Lớp học *"
+            />
 
+            {/* Field: Mã sinh viên */}
             <div>
               <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Mã sinh viên *</label>
               <input
                 type="text"
                 value={studentCode}
                 onChange={(e) => setStudentCode(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-10 bg-white"
                 placeholder="Nhập mã sinh viên"
               />
             </div>
 
+            {/* Field: Họ và tên */}
             <div>
               <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Họ và tên *</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-10 bg-white"
               />
             </div>
 
+            {/* Field: Ngày sinh */}
             <div>
               <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Ngày sinh *</label>
               <input
                 type="date"
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-10 bg-white"
               />
             </div>
 
+            {/* Field: Số điện thoại */}
             <div>
               <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Số điện thoại</label>
               <input
                 type="text"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-10 bg-white"
                 placeholder="Nhập số điện thoại"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Học kỳ đánh giá *</label>
-              <select
-                value={semester}
-                onChange={(e) => setSemester(e.target.value as 'HK1' | 'HK2')}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
-              >
-                <option value="HK1">Học kỳ I</option>
-                <option value="HK2">Học kỳ II</option>
-              </select>
-            </div>
+            {/* Field: Năm học */}
+            <CustomSelect
+              value={academicYear}
+              onChange={(val) => setAcademicYear(val)}
+              options={[
+                { id: '2024-2025', name: '2024-2025' },
+                { id: '2023-2024', name: '2023-2024' }
+              ]}
+              label="Năm học *"
+            />
 
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Năm học *</label>
-              <select
-                value={academicYear}
-                onChange={(e) => setAcademicYear(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white"
-              >
-                <option value="2024-2025">2024-2025</option>
-                <option value="2023-2024">2023-2024</option>
-              </select>
-            </div>
+            {/* Field: Học kỳ đánh giá */}
+            <CustomSelect
+              value={semester}
+              onChange={(val) => setSemester(val as 'HK1' | 'HK2')}
+              options={[
+                { id: 'HK1', name: 'Học kỳ I' },
+                { id: 'HK2', name: 'Học kỳ II' }
+              ]}
+              label="Học kỳ đánh giá *"
+            />
           </div>
 
           {/* Special Compliance Flags */}

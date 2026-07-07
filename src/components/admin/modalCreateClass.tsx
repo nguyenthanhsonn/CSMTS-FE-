@@ -4,14 +4,15 @@ import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { X, Hash, BookOpen, Building2, GraduationCap } from 'lucide-react';
-import { mockFaculties, mockMajors } from '../../services/mockData';
-import type { Class, ClassFormValues } from '../../types';
+import type { Class, ClassFormValues, Faculty, Major } from '../../types';
 
 interface ModalCreateClassProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (values: ClassFormValues) => void;
   editData?: Class | null;
+  faculties?: Faculty[];
+  majors?: Major[];
 }
 
 const validationSchema = Yup.object({
@@ -37,6 +38,8 @@ export default function ModalCreateClass({
   onClose,
   onSubmit,
   editData,
+  faculties = [],
+  majors = [],
 }: ModalCreateClassProps) {
   const isEdit = !!editData;
 
@@ -65,7 +68,7 @@ export default function ModalCreateClass({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editData]);
 
-  const filteredMajors = mockMajors.filter(
+  const filteredMajors = majors.filter(
     (m) => m.facultyId === formik.values.facultyId && m.isActive
   );
 
@@ -162,7 +165,7 @@ export default function ModalCreateClass({
                 onChange={handleFacultyChange}
               >
                 <option value="">-- Chọn khoa --</option>
-                {mockFaculties
+                {faculties
                   .filter((f) => f.isActive)
                   .map((f) => (
                     <option key={f.id} value={f.id}>{f.name}</option>
@@ -215,8 +218,8 @@ export default function ModalCreateClass({
                 </div>
                 {formik.values.majorId && (
                   <p className="mt-1 text-xs text-[#868E96]">
-                    Ngành: {mockMajors.find((m) => m.id === formik.values.majorId)?.name} &nbsp;|&nbsp;
-                    Khoa: {mockFaculties.find((f) => f.id === formik.values.facultyId)?.name}
+                    Ngành: {majors.find((m) => m.id === formik.values.majorId)?.name} &nbsp;|&nbsp;
+                    Khoa: {faculties.find((f) => f.id === formik.values.facultyId)?.name}
                   </p>
                 )}
               </div>

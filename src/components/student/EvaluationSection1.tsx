@@ -2,6 +2,7 @@
 
 import { ChangeEvent } from 'react';
 import { ChevronUp, ChevronDown, Upload, FileText } from 'lucide-react';
+import { CustomSelect } from '../common/CustomSelect';
 
 interface EvaluationSection1Props {
   expanded: boolean;
@@ -145,41 +146,41 @@ export const EvaluationSection1 = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
               {/* SV Column */}
               <div>
-                <label className="block text-xs font-bold text-blue-700 mb-1">Sinh viên tự chấm</label>
-                <select
+                <CustomSelect
                   value={svStudyAttitude}
-                  onChange={(e) => setSvStudyAttitude(e.target.value)}
+                  onChange={(val) => setSvStudyAttitude(val)}
                   disabled={currentUserRole !== 'student' || isSvViolationSec1}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white disabled:bg-gray-100 disabled:opacity-75 disabled:text-gray-500 disabled:border-gray-200"
-                >
-                  <option value="very_good">Điểm TB ≥ 9 (6 điểm)</option>
-                  <option value="good">Điểm TB từ 7 đến &lt; 9 (5 điểm)</option>
-                  <option value="fair">Điểm TB từ 5 đến &lt; 7 (4 điểm)</option>
-                  <option value="average">Điểm TB từ 4 đến &lt; 5 (2 điểm)</option>
-                  <option value="poor">Điểm TB từ 1 đến &lt; 4 (1 điểm)</option>
-                  <option value="none">Điểm TB &lt; 1 (0 điểm)</option>
-                </select>
+                  options={[
+                    { id: 'very_good', name: 'Điểm TB ≥ 9 (6 điểm)' },
+                    { id: 'good', name: 'Điểm TB từ 7 đến < 9 (5 điểm)' },
+                    { id: 'fair', name: 'Điểm TB từ 5 đến < 7 (4 điểm)' },
+                    { id: 'average', name: 'Điểm TB từ 4 đến < 5 (2 điểm)' },
+                    { id: 'poor', name: 'Điểm TB từ 1 đến < 4 (1 điểm)' },
+                    { id: 'none', name: 'Điểm TB < 1 (0 điểm)' }
+                  ]}
+                  label="Sinh viên tự chấm"
+                />
               </div>
 
               {/* Class Column */}
               <div>
-                <label className="block text-xs font-bold text-indigo-700 mb-1">Lớp đánh giá</label>
-                <select
+                <CustomSelect
                   value={classStudyAttitude}
-                  onChange={(e) => {
+                  onChange={(val) => {
                     setIsClassEdited(true);
-                    setClassStudyAttitude(e.target.value);
+                    setClassStudyAttitude(val);
                   }}
                   disabled={currentUserRole !== 'class' || isClassViolationSec1}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white disabled:bg-gray-100 disabled:opacity-75 disabled:text-gray-500 disabled:border-gray-200"
-                >
-                  <option value="very_good">Điểm TB ≥ 9 (6 điểm)</option>
-                  <option value="good">Điểm TB từ 7 đến &lt; 9 (5 điểm)</option>
-                  <option value="fair">Điểm TB từ 5 đến &lt; 7 (4 điểm)</option>
-                  <option value="average">Điểm TB từ 4 đến &lt; 5 (2 điểm)</option>
-                  <option value="poor">Điểm TB từ 1 đến &lt; 4 (1 điểm)</option>
-                  <option value="none">Điểm TB &lt; 1 (0 điểm)</option>
-                </select>
+                  options={[
+                    { id: 'very_good', name: 'Điểm TB ≥ 9 (6 điểm)' },
+                    { id: 'good', name: 'Điểm TB từ 7 đến < 9 (5 điểm)' },
+                    { id: 'fair', name: 'Điểm TB từ 5 đến < 7 (4 điểm)' },
+                    { id: 'average', name: 'Điểm TB từ 4 đến < 5 (2 điểm)' },
+                    { id: 'poor', name: 'Điểm TB từ 1 đến < 4 (1 điểm)' },
+                    { id: 'none', name: 'Điểm TB < 1 (0 điểm)' }
+                  ]}
+                  label="Lớp đánh giá"
+                />
               </div>
             </div>
           </div>
@@ -381,43 +382,43 @@ export const EvaluationSection1 = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
               {/* SV Column */}
               <div>
-                <label className="block text-xs font-bold text-blue-700 mb-1">Sinh viên tự chấm</label>
-                <select
+                <CustomSelect
                   value={svAcademicRank}
-                  onChange={(e) => setSvAcademicRank(e.target.value)}
+                  onChange={(val) => setSvAcademicRank(val)}
                   disabled={currentUserRole !== 'student' || isSvViolationSec1}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white disabled:bg-gray-100 disabled:opacity-75 disabled:text-gray-500 disabled:border-gray-200"
-                >
-                  <option value="excellent">Xuất sắc (8 điểm)</option>
-                  <option value="good">Giỏi (7 điểm)</option>
-                  <option value="fair">Khá (6 điểm)</option>
-                  <option value="average">Trung bình (4 điểm)</option>
-                  <option value="weak_no_warn">Yếu chưa bị cảnh báo (2 điểm)</option>
-                  <option value="weak_warn">Yếu bị cảnh báo lần 1 (1 điểm)</option>
-                  <option value="none">Kém (0 điểm)</option>
-                </select>
+                  options={[
+                    { id: 'excellent', name: 'Xuất sắc (8 điểm)' },
+                    { id: 'good', name: 'Giỏi (7 điểm)' },
+                    { id: 'fair', name: 'Khá (6 điểm)' },
+                    { id: 'average', name: 'Trung bình (4 điểm)' },
+                    { id: 'weak_no_warn', name: 'Yếu chưa bị cảnh báo (2 điểm)' },
+                    { id: 'weak_warn', name: 'Yếu bị cảnh báo lần 1 (1 điểm)' },
+                    { id: 'none', name: 'Kém (0 điểm)' }
+                  ]}
+                  label="Sinh viên tự chấm"
+                />
               </div>
 
               {/* Class Column */}
               <div>
-                <label className="block text-xs font-bold text-indigo-700 mb-1">Lớp đánh giá</label>
-                <select
+                <CustomSelect
                   value={classAcademicRank}
-                  onChange={(e) => {
+                  onChange={(val) => {
                     setIsClassEdited(true);
-                    setClassAcademicRank(e.target.value);
+                    setClassAcademicRank(val);
                   }}
                   disabled={currentUserRole !== 'class' || isClassViolationSec1}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-11 bg-white disabled:bg-gray-100 disabled:opacity-75 disabled:text-gray-500 disabled:border-gray-200"
-                >
-                  <option value="excellent">Xuất sắc (8 điểm)</option>
-                  <option value="good">Giỏi (7 điểm)</option>
-                  <option value="fair">Khá (6 điểm)</option>
-                  <option value="average">Trung bình (4 điểm)</option>
-                  <option value="weak_no_warn">Yếu chưa bị cảnh báo (2 điểm)</option>
-                  <option value="weak_warn">Yếu bị cảnh báo lần 1 (1 điểm)</option>
-                  <option value="none">Kém (0 điểm)</option>
-                </select>
+                  options={[
+                    { id: 'excellent', name: 'Xuất sắc (8 điểm)' },
+                    { id: 'good', name: 'Giỏi (7 điểm)' },
+                    { id: 'fair', name: 'Khá (6 điểm)' },
+                    { id: 'average', name: 'Trung bình (4 điểm)' },
+                    { id: 'weak_no_warn', name: 'Yếu chưa bị cảnh báo (2 điểm)' },
+                    { id: 'weak_warn', name: 'Yếu bị cảnh báo lần 1 (1 điểm)' },
+                    { id: 'none', name: 'Kém (0 điểm)' }
+                  ]}
+                  label="Lớp đánh giá"
+                />
               </div>
             </div>
           </div>

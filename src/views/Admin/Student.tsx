@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Lock, Unlock } from 'lucide-react';
 import ModalCreateStudent from '../../components/admin/modalCreateStudent';
 import { StudentManagementItem, StudentFormValues } from '../../types';
 import ModalConfirm from '../../components/common/modalConfirm';
 import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import DataTable, { type Column } from '../../components/admin/DataTable';
+import { API_Admin } from '../../api/API_Admin';
+import type { Faculty, Major, Class } from '../../types';
 
 export const AdminUsers = () => {
   const [students, setStudents] = useState<StudentManagementItem[]>([
@@ -25,6 +27,45 @@ export const AdminUsers = () => {
   const [lockReason, setLockReason] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
+  const [majors, setMajors] = useState<Major[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const [usersRes, facsRes, majsRes, clssRes] = await Promise.all([
+          API_Admin.getUsers(),
+          API_Admin.getFaculties(),
+          API_Admin.getMajors(),
+          API_Admin.getClasses(),
+        ]);
+
+        const data = (usersRes as any).data || usersRes;
+        const list = Array.isArray(data) ? data : (data && 'items' in data ? data.items : []);
+        const mapped = list.map((u: any) => ({
+          id: u.id,
+          username: u.email ? u.email.split('@')[0] : 'unknown',
+          fullName: u.fullName,
+          role: u.role,
+          email: u.email,
+          phone: u.phone,
+          dateOfBirth: u.dateOfBirth,
+          studentCode: u.studentCode || '',
+          isActive: u.isActive,
+        }));
+        setStudents(mapped);
+
+        setFaculties((facsRes || []).map((f: any) => ({ id: f.id, code: f.code || '', name: f.name || '', isActive: f.isActive ?? true })));
+        setMajors((majsRes || []).map((m: any) => ({ id: m.id, code: m.code || '', name: m.name || '', facultyId: m.facultyId || '', isActive: m.isActive ?? true })));
+        setClasses((clssRes || []).map((c: any) => ({ id: c.id, code: c.code || '', name: c.name || '', facultyId: c.facultyId || '', majorId: c.majorId || '', isActive: c.isActive ?? true })));
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err);
+      }
+    };
+    fetchStudents();
+  }, []);
 
   const filteredStudents = students.filter((s) => {
     // Only show students, not admins in student management list
@@ -61,8 +102,10 @@ export const AdminUsers = () => {
     if (!pendingStudent || !confirmType) return;
 
     if (confirmType === 'delete') {
+      // TODO: Nối API DELETE /users/:id khi backend hoàn thiện
       setStudents((prev) => prev.filter((s) => s.id !== pendingStudent.id));
     } else {
+      // TODO: Nối API PATCH /users/:id/status (khóa/mở khóa) khi backend hoàn thiện
       if (confirmType === 'lock' && lockReason) {
         console.log(`Tài khoản ${pendingStudent.username} bị khóa với lý do: ${lockReason}`);
       }
@@ -100,34 +143,81 @@ export const AdminUsers = () => {
     setEditingStudent(null);
   };
 
-  const handleSubmitModal = (values: StudentFormValues) => {
-    if (editingStudent) {
-      // Cập nhật
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.username === editingStudent.username
-            ? { ...s, ...values }
-            : s
-        )
-      );
+  const handleSubmitModal = async (values: StudentFormValues) => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken && accessToken !== 'mock-access-token') {
+      try {
+        if (editingStudent) {
+          // TODO: Nối API PATCH /users/:id khi backend hoàn thiện
+          setStudents((prev) =>
+            prev.map((s) =>
+              s.username === editingStudent.username
+                ? { ...s, ...values }
+                : s
+            )
+          );
+        } else {
+          // Call API to create a new user on backend
+          const res = await API_Admin.createUser(accessToken, {
+            email: values.email || `${values.username}@csmts.local`,
+            fullName: values.fullName,
+            password: values.password || 'password123',
+            role: values.role || 'student',
+          });
+          const created = res.data || res;
+          
+          const newStudent: StudentManagementItem = {
+            id: created.id || String(Date.now()),
+            username: created.email ? created.email.split('@')[0] : values.username,
+            fullName: created.fullName || values.fullName,
+            role: created.role || values.role,
+            email: created.email || values.email,
+            phone: created.phone || values.phone,
+            dateOfBirth: created.dateOfBirth || values.dateOfBirth,
+            studentCode: values.studentCode,
+            facultyId: values.facultyId,
+            majorId: values.majorId,
+            classId: values.classId,
+            admissionYear: values.admissionYear,
+            isActive: created.isActive ?? true,
+          };
+          setStudents((prev) => [...prev, newStudent]);
+        }
+        setShowModal(false);
+        setEditingStudent(null);
+      } catch (err: any) {
+        alert(err.message || 'Lỗi xảy ra trong quá trình lưu thông tin người dùng.');
+      }
     } else {
-      // Thêm mới
-      const newStudent: StudentManagementItem = {
-        id: String(Date.now()),
-        username: values.username,
-        fullName: values.fullName,
-        role: values.role,
-        email: values.email,
-        phone: values.phone,
-        dateOfBirth: values.dateOfBirth,
-        studentCode: values.studentCode,
-        facultyId: values.facultyId,
-        majorId: values.majorId,
-        classId: values.classId,
-        admissionYear: values.admissionYear,
-        isActive: true,
-      };
-      setStudents((prev) => [...prev, newStudent]);
+      // Mock Fallback flow
+      if (editingStudent) {
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.username === editingStudent.username
+              ? { ...s, ...values }
+              : s
+          )
+        );
+      } else {
+        const newStudent: StudentManagementItem = {
+          id: String(Date.now()),
+          username: values.username,
+          fullName: values.fullName,
+          role: values.role,
+          email: values.email,
+          phone: values.phone,
+          dateOfBirth: values.dateOfBirth,
+          studentCode: values.studentCode,
+          facultyId: values.facultyId,
+          majorId: values.majorId,
+          classId: values.classId,
+          admissionYear: values.admissionYear,
+          isActive: true,
+        };
+        setStudents((prev) => [...prev, newStudent]);
+      }
+      setShowModal(false);
+      setEditingStudent(null);
     }
   };
 
@@ -236,6 +326,9 @@ export const AdminUsers = () => {
         onClose={handleCloseModal}
         onSubmit={handleSubmitModal}
         editData={editingStudent}
+        faculties={faculties}
+        majors={majors}
+        classes={classes}
       />
 
       <ModalConfirm

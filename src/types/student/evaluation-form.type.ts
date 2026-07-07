@@ -30,6 +30,14 @@ export interface EvaluationPeriod {
 export interface EvaluationForm {
   id: string;
   studentId: string;
+  phone?: string;
+  note?: string;
+  semester?: string | { semester: string; year: number };
+  academicYear?: string;
+  studentScore?: number | null;
+  classScore?: number | null;
+  finalScore?: number | null;
+  rank?: string;
   period: EvaluationPeriod;
   status: EvaluationStatus;
   academicPerformance: AcademicPerformance;
