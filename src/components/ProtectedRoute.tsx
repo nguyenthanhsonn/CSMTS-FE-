@@ -16,10 +16,16 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
+    const roleHome: Record<string, string> = {
+      admin: '/admin',
+      student: '/student',
+      class_council: '/class_council',
+    };
+
     if (!isAuthenticated) {
       router.replace('/login');
     } else if (requiredRole && user?.role !== requiredRole) {
-      router.replace(user?.role === 'admin' ? '/admin' : '/student');
+      router.replace(user?.role ? roleHome[user.role] ?? '/login' : '/login');
     } else {
       setIsAuthorized(true);
     }

@@ -47,7 +47,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw error;
     }
   },
-  loginMock: (role: 'student' | 'admin') => {
+  loginMock: (role) => {
     if (role === 'student') {
       const mockStudent = {
         id: 'student-id-123',
@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('user', JSON.stringify(mockStudent));
       localStorage.setItem('accessToken', 'mock-access-token');
       localStorage.setItem('refreshToken', 'mock-refresh-token');
-    } else {
+    } else if (role === 'admin') {
       const mockAdmin = {
         id: 'admin-id-123',
         username: 'admin',
@@ -77,6 +77,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       };
       set({ user: mockAdmin, isAuthenticated: true });
       localStorage.setItem('user', JSON.stringify(mockAdmin));
+      localStorage.setItem('accessToken', 'mock-access-token');
+      localStorage.setItem('refreshToken', 'mock-refresh-token');
+    } else {
+      const mockClassCouncil = {
+        id: 'class-council-id-123',
+        username: 'gvcn',
+        fullName: 'Giảng viên Chủ nhiệm (Mock)',
+        role: 'class_council' as const,
+        email: 'gvcn@csmts.local',
+        isActive: true,
+      };
+      set({ user: mockClassCouncil, isAuthenticated: true });
+      localStorage.setItem('user', JSON.stringify(mockClassCouncil));
       localStorage.setItem('accessToken', 'mock-access-token');
       localStorage.setItem('refreshToken', 'mock-refresh-token');
     }

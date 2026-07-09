@@ -53,7 +53,7 @@ export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<boolean>;
-  loginMock: (role: 'student' | 'admin') => void;
+  loginMock: (role: UserRole) => void;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<Student | Admin>) => Promise<void>;
 }

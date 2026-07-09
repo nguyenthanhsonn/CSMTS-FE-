@@ -14,6 +14,8 @@ interface ModalConfirmProps {
   hasReasonInput?: boolean;
   reasonValue?: string;
   onReasonChange?: (val: string) => void;
+  reasonLabel?: string;
+  reasonPlaceholder?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -29,6 +31,8 @@ export default function ModalConfirm({
   hasReasonInput = false,
   reasonValue = '',
   onReasonChange,
+  reasonLabel = 'Lý do khóa tài khoản',
+  reasonPlaceholder = 'Nhập lý do khóa tài khoản...',
   onConfirm,
   onCancel,
 }: ModalConfirmProps) {
@@ -128,12 +132,12 @@ export default function ModalConfirm({
             {hasReasonInput && (
               <div className="mb-5 w-full text-left">
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#868E96]">
-                  Lý do khóa tài khoản <span className="text-[#C92A2A]">*</span>
+                  {reasonLabel} <span className="text-[#C92A2A]">*</span>
                 </label>
                 <textarea
                   value={reasonValue}
                   onChange={(e) => onReasonChange?.(e.target.value)}
-                  placeholder="Nhập lý do khóa tài khoản..."
+                  placeholder={reasonPlaceholder}
                   className="w-full h-20 rounded-lg border border-[#DEE2E6] p-2.5 text-sm text-[#1A1B1E] outline-none transition duration-150 focus:border-[#E67700] focus:ring-2 focus:ring-[#E67700]/10 placeholder:text-gray-400"
                 />
               </div>

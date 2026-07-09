@@ -6,6 +6,7 @@ import { GraduationCap, Lock, Mail, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import type { UserRole } from '../../types/common';
 
 const LoginSchema = Yup.object().shape({
   email: Yup.string()
@@ -23,14 +24,22 @@ export default function Login() {
   const login = useAuthStore((state) => state.login);
   const loginMock = useAuthStore((state) => state.loginMock);
 
-  const handleQuickLogin = (role: 'student' | 'admin') => {
+  const getRoleHome = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return '/admin';
+      case 'class_council':
+        return '/class_council';
+      case 'student':
+      default:
+        return '/student';
+    }
+  };
+
+  const handleQuickLogin = (role: UserRole) => {
     try {
       loginMock(role);
-      if (role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/student');
-      }
+      router.push(getRoleHome(role));
     } catch (err: any) {
       setError(err.message || 'Đăng nhập nhanh thất bại');
     }
@@ -53,11 +62,7 @@ export default function Login() {
         const success = await login(values.email, values.password);
         if (success) {
           const user = useAuthStore.getState().user;
-          if (user?.role === 'admin') {
-            router.push('/admin');
-          } else {
-            router.push('/student');
-          }
+          router.push(user?.role ? getRoleHome(user.role) : '/student');
         } else {
           setError('Email hoặc mật khẩu không đúng');
         }
@@ -146,7 +151,7 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <button
                 type="button"
                 onClick={() => handleQuickLogin('student')}
@@ -160,6 +165,13 @@ export default function Login() {
                 className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-[#6741D9] bg-[#F3F0FF] rounded-lg hover:bg-[#EAE4FF] transition cursor-pointer border border-[#E1D6FF]"
               >
                 Admin (Mock)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('class_council')}
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-[#2F9E44] bg-[#EBFBEE] rounded-lg hover:bg-[#D3F9D8] transition cursor-pointer border border-[#B2F2BB]"
+              >
+                GVCN (Mock)
               </button>
             </div>
           </form>

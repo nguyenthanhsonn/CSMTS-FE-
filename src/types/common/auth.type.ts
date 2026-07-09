@@ -10,4 +10,4 @@ export type {
 } from './auth.interface';
 
 /** Vai trò tài khoản trong hệ thống. */
-export type UserRole = 'student' | 'admin';
+export type UserRole = 'student' | 'admin' | 'class_council';

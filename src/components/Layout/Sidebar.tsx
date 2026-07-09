@@ -15,6 +15,7 @@ import {
   UserCog,
   BarChart3,
   FileSpreadsheet,
+  ClipboardCheck,
   X,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
@@ -37,6 +38,10 @@ const adminMenuItems = [
   { path: '/admin/import', icon: FileSpreadsheet, label: 'Import danh sách' },
 ];
 
+const classCouncilMenuItems = [
+  { path: '/class_council', icon: ClipboardCheck, label: 'Duyệt điểm rèn luyện' },
+];
+
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
@@ -46,8 +51,24 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
   const pathname = usePathname();
   const { user } = useAuthStore();
 
-  const menuItems = user?.role === 'admin' ? adminMenuItems : studentMenuItems;
-  const sectionLabel = user?.role === 'admin' ? 'QUẢN TRỊ' : 'SINH VIÊN';
+  const menuItems =
+    user?.role === 'admin'
+      ? adminMenuItems
+      : user?.role === 'class_council'
+        ? classCouncilMenuItems
+        : studentMenuItems;
+  const sectionLabel =
+    user?.role === 'admin'
+      ? 'QUẢN TRỊ'
+      : user?.role === 'class_council'
+        ? 'CỐ VẤN LỚP'
+        : 'SINH VIÊN';
+  const homePath =
+    user?.role === 'admin'
+      ? '/admin'
+      : user?.role === 'class_council'
+        ? '/class_council'
+        : '/student';
 
   return (
     <>
@@ -68,7 +89,7 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
         {/* Logo header */}
         <div className="relative flex h-16 items-center justify-between border-b border-white/10 px-4">
           <Link
-            href={user?.role === 'admin' ? '/admin' : '/student'}
+            href={homePath}
             className="flex min-w-0 cursor-pointer items-center gap-2.5"
             onClick={onClose}
           >

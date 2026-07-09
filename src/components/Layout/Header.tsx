@@ -39,14 +39,17 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     ? cleanName.split(' ').slice(-2).map((n) => n[0]).join('').toUpperCase()
     : 'U';
 
-  const dropdownItems = user?.role === 'admin'
-    ? [
-        { label: 'Dashboard', href: '/admin', icon: Home },
-        { label: 'Quản lý sinh viên', href: '/admin/student', icon: UserCog },
-      ]
-    : [
-        { label: 'Thông tin cá nhân', href: '/student/profile', icon: User },
-      ];
+  const dropdownItems =
+    user?.role === 'admin'
+      ? [
+          { label: 'Dashboard', href: '/admin', icon: Home },
+          { label: 'Quản lý sinh viên', href: '/admin/student', icon: UserCog },
+        ]
+      : user?.role === 'student'
+        ? [
+            { label: 'Thông tin cá nhân', href: '/student/profile', icon: User },
+          ]
+        : [];
 
   return (
     <header className="sticky top-0 z-30 h-16 border-b border-[#E9ECEF] bg-white/95 shadow-[0_1px_3px_rgba(0,0,0,0.08)] backdrop-blur-sm">
@@ -108,7 +111,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                   );
                 })}
 
-                <div className="my-1.5 border-t border-[#EDF2F7]" />
+                {dropdownItems.length > 0 && <div className="my-1.5 border-t border-[#EDF2F7]" />}
 
                 {/* Change Password Button */}
                 {user.role === 'student' ? (
@@ -120,7 +123,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     <Lock size={16} className="shrink-0 text-gray-500" />
                     <span>Đổi mật khẩu</span>
                   </Link>
-                ) : (
+                ) : user.role === 'admin' ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -132,9 +135,9 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     <Lock size={16} className="shrink-0 text-gray-500" />
                     <span>Đổi mật khẩu</span>
                   </button>
-                )}
+                ) : null}
 
-                <div className="my-1.5 border-t border-[#EDF2F7]" />
+                {user.role !== 'class_council' && <div className="my-1.5 border-t border-[#EDF2F7]" />}
 
                 {/* Logout Button */}
                 <button
