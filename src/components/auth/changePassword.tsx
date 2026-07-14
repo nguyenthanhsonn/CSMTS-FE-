@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Lock, X, Eye, EyeOff, Loader2, AlertCircle, CheckCircle, KeyRound } from 'lucide-react';
 import { API_Auth } from '../../api/API_Auth';
+import { useAuthStore } from '../../store/authStore';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface ChangePasswordModalProps {
 }
 
 export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
+  const logout = useAuthStore((state) => state.logout);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -22,6 +24,18 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const handleClose = useCallback(() => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowCurrent(false);
+    setShowNew(false);
+    setShowConfirm(false);
+    setError('');
+    setSuccess('');
+    onClose();
+  }, [onClose]);
+
   // Handle ESC key press to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -31,7 +45,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, loading]);
+  }, [handleClose, isOpen, loading]);
 
   if (!isOpen) return null;
 
@@ -75,28 +89,17 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
         }, 1500);
       } else {
         await API_Auth.changePassword(accessToken, currentPassword, newPassword);
-        setSuccess('Đổi mật khẩu thành công!');
+        setSuccess('Đổi mật khẩu thành công. Vui lòng đăng nhập lại.');
         setTimeout(() => {
           handleClose();
-        }, 1500);
+          logout();
+        }, 1200);
       }
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi đổi mật khẩu.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleClose = () => {
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowCurrent(false);
-    setShowNew(false);
-    setShowConfirm(false);
-    setError('');
-    setSuccess('');
-    onClose();
   };
 
   return (

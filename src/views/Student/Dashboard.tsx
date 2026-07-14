@@ -8,13 +8,10 @@ import type { Student } from '../../types/student';
 import { API_Student } from '../../api/API_Student';
 import { WelcomeBanner } from '../../components/student/WelcomeBanner';
 import { StatsGrid } from '../../components/student/StatsGrid';
-import { NotificationCard } from '../../components/student/NotificationCard';
 
 export const StudentDashboard = () => {
   const user = useAuthStore((state) => state.user) as Student;
   const [history, setHistory] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [semesterFilter, setSemesterFilter] = useState<string>('all');
   const [yearFilter, setYearFilter] = useState<string>('all');
 
@@ -39,7 +36,7 @@ export const StudentDashboard = () => {
             },
             {
               id: '2',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 88,
               classScore: 88,
               finalScore: 88,
@@ -52,7 +49,7 @@ export const StudentDashboard = () => {
             },
             {
               id: '3',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 82,
               classScore: 82,
               finalScore: 82,
@@ -65,7 +62,7 @@ export const StudentDashboard = () => {
             },
             {
               id: '4',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 79,
               classScore: 79,
               finalScore: 79,
@@ -78,7 +75,7 @@ export const StudentDashboard = () => {
             },
             {
               id: '5',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 75,
               classScore: 75,
               finalScore: 75,
@@ -91,7 +88,7 @@ export const StudentDashboard = () => {
             },
             {
               id: '6',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 91,
               classScore: 91,
               finalScore: 91,
@@ -104,7 +101,7 @@ export const StudentDashboard = () => {
             },
             {
               id: '7',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 84,
               classScore: 84,
               finalScore: 84,
@@ -117,7 +114,7 @@ export const StudentDashboard = () => {
             },
             {
               id: '8',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 68,
               classScore: 68,
               finalScore: 68,
@@ -130,7 +127,7 @@ export const StudentDashboard = () => {
             },
             {
               id: '9',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 72,
               classScore: 72,
               finalScore: 72,
@@ -143,7 +140,7 @@ export const StudentDashboard = () => {
             },
             {
               id: '10',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 86,
               classScore: 86,
               finalScore: 86,
@@ -167,47 +164,10 @@ export const StudentDashboard = () => {
     fetchHistory();
   }, []);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const [list, unread] = await Promise.all([
-          API_Student.getNotifications({ page: 1, limit: 5 }),
-          API_Student.getUnreadCount(),
-        ]);
-        const items = Array.isArray((list as any)?.items)
-          ? (list as any).items
-          : Array.isArray((list as any)?.data?.items)
-          ? (list as any).data.items
-          : Array.isArray(list)
-          ? list
-          : [];
-
-        setNotifications(
-          items.map((item: any) => ({
-            type: item.type || 'info',
-            title: item.title || 'Thông báo',
-            description: item.content || item.description || item.message || '',
-            borderColor: item.isRead ? 'border-l-[#3B82F6]' : 'border-l-[#F59E0B]',
-            bg: item.isRead ? 'bg-[#EFF6FF]' : 'bg-[#FFFBEB]',
-            textColor: item.isRead ? 'text-[#1E40AF]' : 'text-[#92400E]',
-            descColor: item.isRead ? 'text-[#2563EB]' : 'text-[#B45309]',
-            dot: item.isRead ? 'bg-[#3B82F6]' : 'bg-[#F59E0B]',
-          }))
-        );
-        setUnreadCount((unread as any)?.count ?? (unread as any)?.data?.count ?? 0);
-      } catch (err) {
-        console.error('Failed to fetch notifications:', err);
-        setNotifications([]);
-        setUnreadCount(0);
-      }
-    };
-
-    fetchNotifications();
-  }, []);
-
-  const submittedCount = history.filter((item) => item.status && item.status !== 'draft').length;
-  const approvedCount = history.filter((item) => item.status === 'faculty_approved').length;
-  const draftCount = history.filter((item) => !item.status || item.status === 'draft').length;
+  const normalizeStatus = (status?: string) => String(status || '').toLowerCase();
+  const submittedCount = history.filter((item) => item.status && normalizeStatus(item.status) !== 'draft').length;
+  const approvedCount = history.filter((item) => normalizeStatus(item.status) === 'finalized').length;
+  const draftCount = history.filter((item) => !item.status || normalizeStatus(item.status) === 'draft').length;
   const averageScore = history.length
     ? Math.round(
         history.reduce((total, item) => total + (item.finalScore ?? item.classScore ?? item.studentScore ?? 0), 0) /
@@ -222,7 +182,7 @@ export const StudentDashboard = () => {
       value: draftCount,
       bg: 'bg-amber-50',
       iconColor: 'text-[#F59E0B]',
-      trend: unreadCount > 0 ? `${unreadCount} thông báo mới` : 'Không có thông báo mới',
+      trend: 'Xem chi tiết thông báo trên thanh tiêu đề',
       trendColor: 'text-[#F59E0B]',
     },
     {
@@ -255,14 +215,15 @@ export const StudentDashboard = () => {
   ];
 
   const getStatusText = (status: string) => {
+    const normalizedStatus = normalizeStatus(status);
     const statuses = {
       draft: 'Nháp',
       submitted: 'Đã nộp',
-      class_reviewed: 'Lớp đánh giá',
-      advisor_reviewed: 'CVHT xét duyệt',
-      faculty_approved: 'Đã phê duyệt',
+      class_approved: 'Lớp/CVHT đã duyệt',
+      finalized: 'Đã phê duyệt',
+      rejected: 'Bị trả về',
     };
-    return statuses[status as keyof typeof statuses] || status;
+    return statuses[normalizedStatus as keyof typeof statuses] || status;
   };
 
   const getRankText = (rank: string | null | undefined) => {
@@ -283,11 +244,18 @@ export const StudentDashboard = () => {
   };
 
   const getBadgeColors = (status: string) => {
-    if (status === 'faculty_approved') {
+    const normalizedStatus = normalizeStatus(status);
+    if (normalizedStatus === 'finalized') {
       return { bg: 'bg-emerald-50', text: 'text-[#10B981]' };
     }
-    if (status === 'submitted') {
+    if (normalizedStatus === 'submitted') {
       return { bg: 'bg-blue-50', text: 'text-[#3B82F6]' };
+    }
+    if (normalizedStatus === 'class_approved') {
+      return { bg: 'bg-yellow-50', text: 'text-[#F59E0B]' };
+    }
+    if (normalizedStatus === 'rejected') {
+      return { bg: 'bg-red-50', text: 'text-[#EF4444]' };
     }
     return { bg: 'bg-gray-50', text: 'text-gray-500' };
   };
@@ -351,14 +319,8 @@ export const StudentDashboard = () => {
       {/* Quick Stats Grid */}
       <StatsGrid stats={stats} />
 
-      {/* Grid: Notifications + Recent History */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 items-stretch">
-        
-        {/* Notifications */}
-        <NotificationCard notifications={notifications} />
-
-        {/* History */}
-        <section className="ui-card p-5 h-full flex flex-col">
+      {/* History */}
+      <section className="ui-card p-5 flex flex-col">
           <div className="mb-3 flex items-center justify-between shrink-0 flex-wrap gap-2">
             <h2 className="text-sm sm:text-base font-bold text-[#1A1B1E] shrink-0">Lịch sử gần đây</h2>
             
@@ -436,7 +398,6 @@ export const StudentDashboard = () => {
             )}
           </div>
         </section>
-      </div>
     </div>
   );
 };

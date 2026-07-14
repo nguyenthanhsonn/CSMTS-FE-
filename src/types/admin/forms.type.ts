@@ -28,5 +28,5 @@ export interface StudentFormValues {
   majorId: string;
   classId: string;
   admissionYear: string;
-  role: 'student' | 'admin';
+  role: 'admin' | 'class_council';
 }

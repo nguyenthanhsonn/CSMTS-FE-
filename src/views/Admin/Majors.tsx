@@ -8,6 +8,8 @@ import ModalCreateMajor from '../../components/admin/modelCreateMajor';
 import ModalConfirm from '../../components/common/modalConfirm';
 import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import DataTable, { type Column } from '../../components/admin/DataTable';
+import { getUserFriendlyError, toArray } from '../../utils/adminData';
+import { useAdminUrlState } from '../../utils/adminUrlState';
 
 export const AdminMajors = () => {
   const [majors, setMajors] = useState<Major[]>([]);
@@ -15,15 +17,17 @@ export const AdminMajors = () => {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const { getPage, getValue, setQuery } = useAdminUrlState();
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => getValue('search'));
   const [showModal, setShowModal] = useState(false);
   const [editingMajor, setEditingMajor] = useState<Major | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  const [facultyFilter, setFacultyFilter] = useState('');
+  const [facultyFilter, setFacultyFilter] = useState(() => getValue('facultyId'));
+  const [page, setPage] = useState(() => getPage());
 
   const loadData = async () => {
     try {
@@ -34,25 +38,25 @@ export const AdminMajors = () => {
         API_Admin.getMajors(),
       ]);
 
-      const normalizedFacs: Faculty[] = (facs || []).map((f: any) => ({
+      const normalizedFacs: Faculty[] = toArray(facs as any).map((f: any) => ({
         id: f.id,
         code: f.code || '',
         name: f.name || '',
         isActive: f.isActive ?? true,
       }));
 
-      const normalizedMajs: Major[] = (majs || []).map((m: any) => ({
+      const normalizedMajs: Major[] = toArray(majs as any).map((m: any) => ({
         id: m.id,
         code: m.code || '',
         name: m.name || '',
-        facultyId: m.facultyId || '',
+        facultyId: m.facultyId || m.faculty_id || m.faculty?.id || m.faculty?._id || '',
         isActive: m.isActive ?? true,
       }));
 
       setFaculties(normalizedFacs);
       setMajors(normalizedMajs);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Không thể tải danh sách dữ liệu.');
+      setErrorMsg(getUserFriendlyError(err, 'Không thể tải danh sách ngành học. Vui lòng thử lại sau.'));
     } finally {
       setLoading(false);
     }
@@ -88,8 +92,7 @@ export const AdminMajors = () => {
       await loadData();
     } catch (err: any) {
       setErrorMsg(
-        err.message || 
-        'Không thể xóa ngành học này. Ngành có thể đã có lớp học hoặc phân công hội đồng liên kết.'
+        getUserFriendlyError(err, 'Không thể xóa ngành học này. Ngành có thể đã có lớp học hoặc phân công hội đồng liên kết.')
       );
       setConfirmOpen(false);
       setPendingDeleteId(null);
@@ -131,7 +134,7 @@ export const AdminMajors = () => {
       setEditingMajor(null);
       await loadData();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Lỗi lưu thông tin ngành học. Vui lòng kiểm tra lại mã ngành.');
+      setErrorMsg(getUserFriendlyError(err, 'Không thể lưu thông tin ngành học. Vui lòng kiểm tra lại mã ngành.'));
     } finally {
       setActionLoading(false);
     }
@@ -188,17 +191,37 @@ export const AdminMajors = () => {
       .map((f) => ({ label: f.name, value: f.id })),
   ];
 
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+    setQuery({ search: value }, { resetPage: true });
+  };
+
+  const handleFacultyChange = (value: string) => {
+    setFacultyFilter(value);
+    setPage(1);
+    setQuery({ facultyId: value }, { resetPage: true });
+  };
+
+  const handlePageChange = (value: number) => {
+    setPage(value);
+    setQuery({ page: value === 1 ? null : value });
+  };
+
   return (
-    <div className="flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="relative flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA] pb-24">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý Ngành học</h1>
-        <button
-          onClick={() => handleOpenModal()}
-          className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-[#3B5BDB] text-white rounded-lg hover:bg-blue-700 font-semibold text-sm transition"
-        >
-          <Plus size={16} />
-          Thêm ngành
-        </button>
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={handleSearchChange}
+          filterValue={facultyFilter}
+          onFilterChange={handleFacultyChange}
+          searchPlaceholder="Tên ngành"
+          filterOptions={facultyFilterOptions}
+          filterLabel="Khoa"
+          variant="inline"
+        />
       </div>
 
       {errorMsg && (
@@ -207,16 +230,6 @@ export const AdminMajors = () => {
           <span>{errorMsg}</span>
         </div>
       )}
-
-      <SearchFilterBar
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        filterValue={facultyFilter}
-        onFilterChange={setFacultyFilter}
-        searchPlaceholder="Tìm kiếm ngành học..."
-        filterOptions={facultyFilterOptions}
-        filterLabel="Khoa"
-      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[300px] gap-2.5">
@@ -231,9 +244,21 @@ export const AdminMajors = () => {
             pageSize={8}
             emptyText="Không tìm thấy ngành học nào"
             minHeight={400}
+            showSummary={false}
+            paginationAlign="left"
+            currentPage={page}
+            onPageChange={handlePageChange}
           />
         </div>
       )}
+
+      <button
+        onClick={() => handleOpenModal()}
+        className="fixed bottom-8 right-8 z-20 flex cursor-pointer items-center gap-2 rounded-full bg-[#0B3A82] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#104E92]"
+      >
+        <Plus size={18} />
+        Thêm ngành
+      </button>
 
       <ModalCreateMajor
         isOpen={showModal}
@@ -241,6 +266,7 @@ export const AdminMajors = () => {
         onSubmit={handleSubmitModal}
         editData={editingMajor}
         faculties={faculties}
+        onImported={loadData}
       />
 
       <ModalConfirm

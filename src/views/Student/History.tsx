@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Calendar, Eye, Loader2, AlertCircle } from 'lucide-react';
 import { API_Student } from '../../api/API_Student';
@@ -44,17 +44,17 @@ export const StudentHistory = () => {
   }, []);
 
   // Sync state changes back to URL query parameters
-  const updateUrl = (year: string, semester: string, page: number) => {
+  const updateUrl = useCallback((year: string, semester: string, page: number) => {
     const params = new URLSearchParams();
     if (year !== 'all') params.set('year', year);
     if (semester !== 'all') params.set('semester', semester);
     if (page > 1) params.set('page', page.toString());
     router.push(`${pathname}?${params.toString()}`);
-  };
+  }, [pathname, router]);
 
   useEffect(() => {
     updateUrl(yearFilter, semesterFilter, currentPage);
-  }, [yearFilter, semesterFilter, currentPage]);
+  }, [yearFilter, semesterFilter, currentPage, updateUrl]);
 
   // Sync URL changes back to states (e.g., on back/forward navigation)
   useEffect(() => {
@@ -88,7 +88,7 @@ export const StudentHistory = () => {
             },
             {
               id: '2',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 88,
               classScore: 88,
               finalScore: 88,
@@ -101,7 +101,7 @@ export const StudentHistory = () => {
             },
             {
               id: '3',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 82,
               classScore: 82,
               finalScore: 82,
@@ -114,7 +114,7 @@ export const StudentHistory = () => {
             },
             {
               id: '4',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 79,
               classScore: 79,
               finalScore: 79,
@@ -127,7 +127,7 @@ export const StudentHistory = () => {
             },
             {
               id: '5',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 75,
               classScore: 75,
               finalScore: 75,
@@ -140,7 +140,7 @@ export const StudentHistory = () => {
             },
             {
               id: '6',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 91,
               classScore: 91,
               finalScore: 91,
@@ -153,7 +153,7 @@ export const StudentHistory = () => {
             },
             {
               id: '7',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 84,
               classScore: 84,
               finalScore: 84,
@@ -166,7 +166,7 @@ export const StudentHistory = () => {
             },
             {
               id: '8',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 68,
               classScore: 68,
               finalScore: 68,
@@ -179,7 +179,7 @@ export const StudentHistory = () => {
             },
             {
               id: '9',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 72,
               classScore: 72,
               finalScore: 72,
@@ -192,7 +192,7 @@ export const StudentHistory = () => {
             },
             {
               id: '10',
-              status: 'faculty_approved',
+              status: 'finalized',
               studentScore: 86,
               classScore: 86,
               finalScore: 86,
@@ -231,6 +231,43 @@ export const StudentHistory = () => {
     setCurrentPage(1);
   };
 
+  const getSemesterCode = (item: any) => {
+    const rawSemester = item.semester && typeof item.semester === 'object'
+      ? item.semester.semester
+      : item.semester;
+
+    if (rawSemester === 'SEMESTER_1' || rawSemester === 'HK1') return 'HK1';
+    if (rawSemester === 'SEMESTER_2' || rawSemester === 'HK2') return 'HK2';
+    if (rawSemester === 'SUMMER' || rawSemester === 'HKHE') return 'SUMMER';
+    return rawSemester || '';
+  };
+
+  const getSemesterLabel = (item: any) => {
+    const code = getSemesterCode(item);
+    if (code === 'HK1') return 'Học kỳ 1';
+    if (code === 'HK2') return 'Học kỳ 2';
+    if (code === 'SUMMER') return 'Học kỳ hè';
+    return 'Học kỳ';
+  };
+
+  const getAcademicYear = (item: any) => {
+    if (item.semester && typeof item.semester === 'object') {
+      if (item.semester.academicYear) return item.semester.academicYear;
+      if (typeof item.semester.year === 'number') return `${item.semester.year}-${item.semester.year + 1}`;
+      if (item.semester.year) return String(item.semester.year);
+    }
+
+    if (item.academicYear) return String(item.academicYear);
+    if (typeof item.year === 'number') return `${item.year}-${item.year + 1}`;
+    if (item.year) return String(item.year);
+    return '';
+  };
+
+  const getAcademicYearStart = (academicYear: string) => {
+    const startYear = Number.parseInt(academicYear.split('-')[0] || academicYear, 10);
+    return Number.isNaN(startYear) ? 0 : startYear;
+  };
+
   // Simulate a loading indicator during filter or page updates for visual smoothness
   useEffect(() => {
     setIsChanging(true);
@@ -240,45 +277,35 @@ export const StudentHistory = () => {
 
   // Extract unique academic years dynamically
   const uniqueYears = Array.from(new Set(
-    history.map(item => {
-      if (item.semester && typeof item.semester === 'object') {
-        return item.semester.year.toString();
-      }
-      return item.academicYear || '';
-    }).filter(Boolean)
+    history.map(item => getAcademicYear(item)).filter(Boolean)
   )).sort((a, b) => b.localeCompare(a));
 
   // Filters combined with AND logic
   const filteredHistory = history.filter(item => {
     if (semesterFilter !== 'all') {
-      const sem = item.semester && typeof item.semester === 'object'
-        ? item.semester.semester
-        : item.semester;
-      if (semesterFilter === 'HK1' && sem !== 'SEMESTER_1' && sem !== 'HK1') return false;
-      if (semesterFilter === 'HK2' && sem !== 'SEMESTER_2' && sem !== 'HK2') return false;
+      if (getSemesterCode(item) !== semesterFilter) return false;
     }
     if (yearFilter !== 'all') {
-      const y = item.semester && typeof item.semester === 'object'
-        ? item.semester.year.toString()
-        : item.academicYear;
-      if (y !== yearFilter) return false;
+      const academicYear = getAcademicYear(item);
+      if (academicYear !== yearFilter && String(getAcademicYearStart(academicYear)) !== yearFilter) return false;
     }
     return true;
   });
 
   // Sorting logic (Year descending, Semester 2 before Semester 1, submission date descending)
   const sortedHistory = [...filteredHistory].sort((a, b) => {
-    const yearA = a.semester && typeof a.semester === 'object' ? a.semester.year : parseInt(a.academicYear) || 0;
-    const yearB = b.semester && typeof b.semester === 'object' ? b.semester.year : parseInt(b.academicYear) || 0;
+    const yearA = getAcademicYearStart(getAcademicYear(a));
+    const yearB = getAcademicYearStart(getAcademicYear(b));
     if (yearB !== yearA) return yearB - yearA;
 
-    const semA = a.semester && typeof a.semester === 'object' ? a.semester.semester : a.semester;
-    const semB = b.semester && typeof b.semester === 'object' ? b.semester.semester : b.semester;
     const semWeight = (s: any) => {
-      if (s === 'SEMESTER_2' || s === 'HK2') return 2;
-      if (s === 'SEMESTER_1' || s === 'HK1') return 1;
+      if (s === 'SUMMER') return 3;
+      if (s === 'HK2') return 2;
+      if (s === 'HK1') return 1;
       return 0;
     };
+    const semA = getSemesterCode(a);
+    const semB = getSemesterCode(b);
     if (semWeight(semB) !== semWeight(semA)) {
       return semWeight(semB) - semWeight(semA);
     }
@@ -296,14 +323,15 @@ export const StudentHistory = () => {
   const paginatedHistory = sortedHistory.slice(startIndex, startIndex + pageSize);
 
   const getStatusBadge = (status: string) => {
+    const normalizedStatus = String(status || '').toLowerCase();
     const badges = {
       draft: { text: 'Nháp', class: 'bg-gray-100 text-gray-700' },
       submitted: { text: 'Đã nộp', class: 'bg-blue-100 text-blue-700' },
-      class_reviewed: { text: 'Lớp đánh giá', class: 'bg-yellow-100 text-yellow-700' },
-      advisor_reviewed: { text: 'CVHT xét duyệt', class: 'bg-orange-100 text-orange-700' },
-      faculty_approved: { text: 'Đã phê duyệt', class: 'bg-green-100 text-green-700' },
+      class_approved: { text: 'Lớp/CVHT đã duyệt', class: 'bg-yellow-100 text-yellow-700' },
+      finalized: { text: 'Đã phê duyệt', class: 'bg-green-100 text-green-700' },
+      rejected: { text: 'Bị trả về', class: 'bg-red-100 text-red-700' },
     };
-    return badges[status as keyof typeof badges] || badges.draft;
+    return badges[normalizedStatus as keyof typeof badges] || badges.draft;
   };
 
   const getRankText = (rank: string | null | undefined) => {
@@ -389,8 +417,9 @@ export const StudentHistory = () => {
               className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer min-h-[32px]"
             >
               <option value="all">Tất cả học kỳ</option>
-              <option value="HK1">Học kỳ I</option>
-              <option value="HK2">Học kỳ II</option>
+              <option value="HK1">Học kỳ 1</option>
+              <option value="HK2">Học kỳ 2</option>
+              <option value="SUMMER">Học kỳ hè</option>
             </select>
           </div>
         </div>
@@ -413,8 +442,10 @@ export const StudentHistory = () => {
           </div>
         ) : (
           <div className="space-y-2.5">
-            {paginatedHistory.map((item) => {
-              const statusBadge = getStatusBadge(item.status);
+	            {paginatedHistory.map((item) => {
+	              const statusBadge = getStatusBadge(item.status);
+	              const academicYear = getAcademicYear(item);
+	              const semesterLabel = getSemesterLabel(item);
               const totalScore = item.finalScore !== null && item.finalScore !== undefined 
                 ? item.finalScore 
                 : item.classScore !== null && item.classScore !== undefined 
@@ -424,16 +455,14 @@ export const StudentHistory = () => {
               return (
                 <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-3.5 transition hover:shadow-md">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-                        <Calendar className="text-blue-600" size={18} />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-gray-900 leading-tight">
-                          {item.semester && typeof item.semester === 'object'
-                            ? `${item.semester.semester === 'SEMESTER_1' ? 'Học kỳ I' : 'Học kỳ II'} — Năm học ${item.semester.year}`
-                            : `${item.semester} — Năm học ${item.academicYear}`}
-                        </h3>
+	                    <div className="flex items-center gap-3">
+	                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+	                        <Calendar className="text-blue-600" size={18} />
+	                      </div>
+	                      <div>
+	                        <h3 className="text-sm font-bold text-gray-900 leading-tight">
+	                          {semesterLabel} — Năm học {academicYear}
+	                        </h3>
                         <p className="text-xs text-gray-500 mt-0.5">
                           {item.submittedAt 
                             ? `Ngày nộp: ${new Date(item.submittedAt).toLocaleDateString('vi-VN')}`
@@ -456,13 +485,17 @@ export const StudentHistory = () => {
                       <p className={`text-xs font-bold mt-0.5 ${getRatingColor(item.rank || item.rating)}`}>
                         {getRankText(item.rank || item.rating)}
                       </p>
-                    </div>
-                    <div className="flex items-center justify-end col-span-2 sm:col-span-1">
-                      <button className="w-full sm:w-auto flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50/50 hover:border-blue-300 transition cursor-pointer">
-                        <Eye size={12} />
-                        Xem chi tiết
-                      </button>
-                    </div>
+	                    </div>
+	                    <div className="flex items-center justify-end col-span-2 sm:col-span-1">
+	                      <button
+	                        type="button"
+	                        onClick={() => router.push(`/student/evaluation?id=${item.id}`)}
+	                        className="w-full sm:w-auto flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50/50 hover:border-blue-300 transition cursor-pointer"
+	                      >
+	                        <Eye size={12} />
+	                        Xem chi tiết
+	                      </button>
+	                    </div>
                   </div>
                 </div>
               );

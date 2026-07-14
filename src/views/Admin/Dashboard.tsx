@@ -7,6 +7,16 @@ import { AdminStatsGrid } from '../../components/admin/AdminStatsGrid';
 import { AdminFacultyStatsCard } from '../../components/admin/AdminFacultyStatsCard';
 import { AdminActivityFeedCard } from '../../components/admin/AdminActivityFeedCard';
 
+const toArray = <T,>(value: any): T[] => {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.data?.items)) return value.data.items;
+  return [];
+};
+
+const formatNumber = (value: unknown) => Number(value ?? 0).toLocaleString('vi-VN');
+
 export const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -32,18 +42,14 @@ export const AdminDashboard = () => {
           API_Admin.getClasses(),
         ]);
 
-        const usersList = Array.isArray(usersRes)
-          ? usersRes
-          : usersRes && 'items' in usersRes
-          ? (usersRes as any).items
-          : [];
+        const usersList = toArray<any>(usersRes);
 
         const studs = usersList.filter((u: any) => u.role === 'student' || !u.role);
         const adms = usersList.filter((u: any) => u.role === 'admin' || u.role === 'council');
 
-        const facs = facsRes || [];
-        const majs = majsRes || [];
-        const clss = clssRes || [];
+        const facs = toArray<any>(facsRes);
+        const majs = toArray<any>(majsRes);
+        const clss = toArray<any>(clssRes);
 
         setStatsData({
           totalUsers: usersList.length,
@@ -80,7 +86,7 @@ export const AdminDashboard = () => {
     {
       icon: Users,
       label: 'Tổng số tài khoản',
-      value: statsData.totalUsers.toLocaleString('vi-VN'),
+      value: formatNumber(statsData.totalUsers),
       borderColor: 'border-t-[#3B5BDB]',
       iconBg: 'bg-[#EDF2FF]',
       iconColor: 'text-[#3B5BDB]',
@@ -89,7 +95,7 @@ export const AdminDashboard = () => {
     {
       icon: GraduationCap,
       label: 'Sinh viên',
-      value: statsData.totalStudents.toLocaleString('vi-VN'),
+      value: formatNumber(statsData.totalStudents),
       borderColor: 'border-t-[#2F9E44]',
       iconBg: 'bg-[#EBFBEE]',
       iconColor: 'text-[#2F9E44]',
@@ -98,7 +104,7 @@ export const AdminDashboard = () => {
     {
       icon: UserCog,
       label: 'Quản trị viên',
-      value: statsData.totalAdmins.toLocaleString('vi-VN'),
+      value: formatNumber(statsData.totalAdmins),
       borderColor: 'border-t-[#6741D9]',
       iconBg: 'bg-[#F3F0FF]',
       iconColor: 'text-[#6741D9]',
@@ -107,7 +113,7 @@ export const AdminDashboard = () => {
     {
       icon: Building2,
       label: 'Khoa',
-      value: statsData.totalFaculties.toLocaleString('vi-VN'),
+      value: formatNumber(statsData.totalFaculties),
       borderColor: 'border-t-[#E67700]',
       iconBg: 'bg-[#FFF9DB]',
       iconColor: 'text-[#E67700]',
@@ -116,7 +122,7 @@ export const AdminDashboard = () => {
     {
       icon: BookOpen,
       label: 'Ngành học',
-      value: statsData.totalMajors.toLocaleString('vi-VN'),
+      value: formatNumber(statsData.totalMajors),
       borderColor: 'border-t-[#F06595]',
       iconBg: 'bg-[#FFF0F6]',
       iconColor: 'text-[#D6336C]',
@@ -125,7 +131,7 @@ export const AdminDashboard = () => {
     {
       icon: School,
       label: 'Lớp',
-      value: statsData.totalClasses.toLocaleString('vi-VN'),
+      value: formatNumber(statsData.totalClasses),
       borderColor: 'border-t-[#20C997]',
       iconBg: 'bg-[#E6FCF5]',
       iconColor: 'text-[#0CA678]',

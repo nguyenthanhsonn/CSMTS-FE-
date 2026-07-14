@@ -1,79 +1,92 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Lock, Unlock } from 'lucide-react';
+import { Plus, Edit, Trash2, Lock, Unlock, AlertCircle, Upload } from 'lucide-react';
 import ModalCreateStudent from '../../components/admin/modalCreateStudent';
-import { StudentManagementItem, StudentFormValues } from '../../types';
+import ModalCreateManualStudent from '../../components/admin/modalCreateManualStudent';
+import ModalImportExcel from '../../components/admin/modalImportExcel';
+import { Class, CreateStudentPayload, StudentManagementItem, StudentFormValues } from '../../types';
 import ModalConfirm from '../../components/common/modalConfirm';
 import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import DataTable, { type Column } from '../../components/admin/DataTable';
 import { API_Admin } from '../../api/API_Admin';
-import type { Faculty, Major, Class } from '../../types';
+import { useToast } from '../../components/common/ToastProvider';
+import { getUserFriendlyError, toArray } from '../../utils/adminData';
+import { useAdminUrlState } from '../../utils/adminUrlState';
 
 export const AdminUsers = () => {
-  const [students, setStudents] = useState<StudentManagementItem[]>([
-    { id: '1', username: 'sv001', fullName: 'Nguyễn Văn A', role: 'student', studentCode: '2021001', isActive: true },
-    { id: '2', username: 'admin', fullName: 'Quản trị viên', role: 'admin', email: 'admin@uni.vn', isActive: true },
-    { id: '3', username: 'sv002', fullName: 'Trần Thị B', role: 'student', studentCode: '2021002', isActive: true },
-  ]);
+  const toast = useToast();
+  const [students, setStudents] = useState<StudentManagementItem[]>([]);
 
   const [showModal, setShowModal] = useState(false);
+  const [studentModalOpen, setStudentModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentFormValues | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [classesList, setClassesList] = useState<Class[]>([]);
+  const { getPage, getValue, setQuery } = useAdminUrlState({ status: 'all', role: 'all' });
+  const [searchTerm, setSearchTerm] = useState(() => getValue('search'));
 
   // Confirmation state
   const [confirmType, setConfirmType] = useState<'delete' | 'lock' | 'unlock' | null>(null);
   const [pendingStudent, setPendingStudent] = useState<StudentManagementItem | null>(null);
   const [lockReason, setLockReason] = useState('');
 
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>(
+    () => getValue('status', 'all') as 'all' | 'active' | 'inactive'
+  );
+  const [roleFilter, setRoleFilter] = useState<'all' | 'student' | 'admin' | 'class_council'>(
+    () => getValue('role', 'all') as 'all' | 'student' | 'admin' | 'class_council'
+  );
+  const [page, setPage] = useState(() => getPage());
 
-  const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [majors, setMajors] = useState<Major[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]);
+  const fetchStudents = async () => {
+    try {
+      setErrorMsg('');
+      const usersRes = await API_Admin.getUsers();
+
+      const list = toArray(usersRes as any);
+      const mapped = list.map((u: any) => ({
+        id: u.id,
+        username: u.username || (u.email ? u.email.split('@')[0] : 'unknown'),
+        fullName: u.fullName,
+        role: u.role,
+        email: u.email,
+        phone: u.phone,
+        dateOfBirth: u.dateOfBirth,
+        studentCode: u.studentCode || '',
+        isActive: u.isActive,
+      }));
+      setStudents(mapped);
+    } catch (err) {
+      setErrorMsg(getUserFriendlyError(err, 'Không thể tải danh sách người dùng. Vui lòng thử lại sau.'));
+    }
+  };
 
   useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const [usersRes, facsRes, majsRes, clssRes] = await Promise.all([
-          API_Admin.getUsers(),
-          API_Admin.getFaculties(),
-          API_Admin.getMajors(),
-          API_Admin.getClasses(),
-        ]);
-
-        const data = (usersRes as any).data || usersRes;
-        const list = Array.isArray(data) ? data : (data && 'items' in data ? data.items : []);
-        const mapped = list.map((u: any) => ({
-          id: u.id,
-          username: u.email ? u.email.split('@')[0] : 'unknown',
-          fullName: u.fullName,
-          role: u.role,
-          email: u.email,
-          phone: u.phone,
-          dateOfBirth: u.dateOfBirth,
-          studentCode: u.studentCode || '',
-          isActive: u.isActive,
-        }));
-        setStudents(mapped);
-
-        setFaculties((facsRes || []).map((f: any) => ({ id: f.id, code: f.code || '', name: f.name || '', isActive: f.isActive ?? true })));
-        setMajors((majsRes || []).map((m: any) => ({ id: m.id, code: m.code || '', name: m.name || '', facultyId: m.facultyId || '', isActive: m.isActive ?? true })));
-        setClasses((clssRes || []).map((c: any) => ({ id: c.id, code: c.code || '', name: c.name || '', facultyId: c.facultyId || '', majorId: c.majorId || '', isActive: c.isActive ?? true })));
-      } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
-      }
-    };
     fetchStudents();
   }, []);
 
-  const filteredStudents = students.filter((s) => {
-    // Only show students, not admins in student management list
-    if (s.role !== 'student') return false;
+  useEffect(() => {
+    const loadClasses = async () => {
+      try {
+        const data = await API_Admin.getClasses();
+        setClassesList(toArray(data as any));
+      } catch {
+        setClassesList([]);
+      }
+    };
 
+    loadClasses();
+  }, []);
+
+  const filteredStudents = students.filter((s) => {
     const matchSearch =
       s.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.username.toLowerCase().includes(searchTerm.toLowerCase());
+      s.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.studentCode?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchRole = roleFilter === 'all' ? true : s.role === roleFilter;
     const matchStatus =
       statusFilter === 'all'
         ? true
@@ -81,7 +94,7 @@ export const AdminUsers = () => {
         ? s.isActive
         : !s.isActive;
 
-    return matchSearch && matchStatus;
+    return matchSearch && matchRole && matchStatus;
   });
 
   const handleToggleActive = (id: string) => {
@@ -98,29 +111,37 @@ export const AdminUsers = () => {
     setConfirmType('delete');
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     if (!pendingStudent || !confirmType) return;
 
-    if (confirmType === 'delete') {
-      // TODO: Nối API DELETE /users/:id khi backend hoàn thiện
-      setStudents((prev) => prev.filter((s) => s.id !== pendingStudent.id));
-    } else {
-      // TODO: Nối API PATCH /users/:id/status (khóa/mở khóa) khi backend hoàn thiện
-      if (confirmType === 'lock' && lockReason) {
-        console.log(`Tài khoản ${pendingStudent.username} bị khóa với lý do: ${lockReason}`);
+    try {
+      setErrorMsg('');
+
+      if (confirmType === 'delete') {
+        await API_Admin.deleteUser(pendingStudent.id);
+        toast.success('Đã xóa tài khoản.');
+      } else {
+        const nextIsActive = confirmType === 'unlock';
+        await API_Admin.updateUserStatus(pendingStudent.id, { isActive: nextIsActive });
+        toast.success(nextIsActive ? 'Đã mở khóa tài khoản.' : 'Đã khóa tài khoản.');
       }
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.id === pendingStudent.id ? { ...s, isActive: !s.isActive } : s
-        )
-      );
+
+      await fetchStudents();
+    } catch (err) {
+      setErrorMsg(getUserFriendlyError(err, 'Không thể cập nhật tài khoản. Vui lòng thử lại sau.'));
+    } finally {
+      setConfirmType(null);
+      setPendingStudent(null);
+      setLockReason('');
     }
-    setConfirmType(null);
-    setPendingStudent(null);
-    setLockReason('');
   };
 
   const handleOpenEdit = (s: StudentManagementItem) => {
+    if (s.role === 'student') {
+      setErrorMsg('Sinh viên được quản lý ở trang riêng, không chỉnh sửa trong modal người dùng.');
+      return;
+    }
+
     setEditingStudent({
       username: s.username,
       fullName: s.fullName,
@@ -133,7 +154,7 @@ export const AdminUsers = () => {
       majorId: s.majorId ?? '',
       classId: s.classId ?? '',
       admissionYear: s.admissionYear ?? String(new Date().getFullYear()),
-      role: s.role,
+      role: s.role as 'admin' | 'class_council',
     });
     setShowModal(true);
   };
@@ -144,53 +165,9 @@ export const AdminUsers = () => {
   };
 
   const handleSubmitModal = async (values: StudentFormValues) => {
-    const accessToken = localStorage.getItem('accessToken');
-    if (accessToken && accessToken !== 'mock-access-token') {
-      try {
-        if (editingStudent) {
-          // TODO: Nối API PATCH /users/:id khi backend hoàn thiện
-          setStudents((prev) =>
-            prev.map((s) =>
-              s.username === editingStudent.username
-                ? { ...s, ...values }
-                : s
-            )
-          );
-        } else {
-          // Call API to create a new user on backend
-          const res = await API_Admin.createUser(accessToken, {
-            email: values.email || `${values.username}@csmts.local`,
-            fullName: values.fullName,
-            password: values.password || 'password123',
-            role: values.role || 'student',
-          });
-          const created = res.data || res;
-          
-          const newStudent: StudentManagementItem = {
-            id: created.id || String(Date.now()),
-            username: created.email ? created.email.split('@')[0] : values.username,
-            fullName: created.fullName || values.fullName,
-            role: created.role || values.role,
-            email: created.email || values.email,
-            phone: created.phone || values.phone,
-            dateOfBirth: created.dateOfBirth || values.dateOfBirth,
-            studentCode: values.studentCode,
-            facultyId: values.facultyId,
-            majorId: values.majorId,
-            classId: values.classId,
-            admissionYear: values.admissionYear,
-            isActive: created.isActive ?? true,
-          };
-          setStudents((prev) => [...prev, newStudent]);
-        }
-        setShowModal(false);
-        setEditingStudent(null);
-      } catch (err: any) {
-        alert(err.message || 'Lỗi xảy ra trong quá trình lưu thông tin người dùng.');
-      }
-    } else {
-      // Mock Fallback flow
+    try {
       if (editingStudent) {
+        // TODO: Nối API PATCH /admin/users/:id khi backend hoàn thiện
         setStudents((prev) =>
           prev.map((s) =>
             s.username === editingStudent.username
@@ -199,40 +176,109 @@ export const AdminUsers = () => {
           )
         );
       } else {
-        const newStudent: StudentManagementItem = {
-          id: String(Date.now()),
+        const res = await API_Admin.createUser({
           username: values.username,
-          fullName: values.fullName,
-          role: values.role,
           email: values.email,
-          phone: values.phone,
-          dateOfBirth: values.dateOfBirth,
+          fullName: values.fullName,
+          password: values.password,
+          role: values.role,
+          phone: values.phone || undefined,
+          dateOfBirth: values.dateOfBirth || undefined,
+        });
+        const created = res.data || res;
+        
+        const newStudent: StudentManagementItem = {
+          id: created.id || String(Date.now()),
+          username: created.username || (created.email ? created.email.split('@')[0] : values.username),
+          fullName: created.fullName || values.fullName,
+          role: created.role || values.role,
+          email: created.email || values.email,
+          phone: created.phone || values.phone,
+          dateOfBirth: created.dateOfBirth || values.dateOfBirth,
           studentCode: values.studentCode,
           facultyId: values.facultyId,
           majorId: values.majorId,
           classId: values.classId,
           admissionYear: values.admissionYear,
-          isActive: true,
+          isActive: created.isActive ?? true,
         };
         setStudents((prev) => [...prev, newStudent]);
+
+        if (values.role === 'class_council') {
+          if (created.accountEmailSent === true) {
+            toast.success('Tạo tài khoản và gửi email thành công.');
+          } else if (created.accountEmailSent === false && created.accountEmailError) {
+            toast.error('Tạo tài khoản thành công nhưng chưa gửi được email.');
+          } else {
+            toast.success('Tạo tài khoản thành công.');
+          }
+        } else {
+          toast.success('Tạo tài khoản thành công.');
+        }
       }
       setShowModal(false);
       setEditingStudent(null);
+    } catch (err) {
+      const friendlyMessage = getUserFriendlyError(err, 'Không thể lưu thông tin người dùng. Vui lòng kiểm tra lại thông tin đã nhập.');
+      setErrorMsg(friendlyMessage);
+      throw new Error(friendlyMessage);
     }
   };
 
+  const handleCreateManualStudent = async (values: CreateStudentPayload) => {
+    try {
+      setErrorMsg('');
+      const created = await API_Admin.createStudent(values);
+      const newStudent: StudentManagementItem = {
+        id: created.id || String(Date.now()),
+        username: created.username || values.username,
+        fullName: created.fullName || values.fullName,
+        role: 'student',
+        email: created.email || values.email,
+        phone: created.phone || values.phone,
+        dateOfBirth: created.dateOfBirth || values.dateOfBirth,
+        studentCode: created.studentCode || values.studentCode,
+        classId: values.classId,
+        isActive: created.isActive ?? true,
+      };
+      setStudents((prev) => [...prev, newStudent]);
+      if (created.accountEmailSent === false && created.accountEmailError) {
+        toast.error('Tài khoản đã tạo, nhưng email chưa được gửi.');
+      } else {
+        toast.success('Tạo sinh viên thành công.');
+      }
+    } catch (err) {
+      const friendlyMessage = getUserFriendlyError(err, 'Không thể tạo sinh viên. Vui lòng kiểm tra lại thông tin đã nhập.');
+      setErrorMsg(friendlyMessage);
+      throw new Error(friendlyMessage);
+    }
+  };
+
+  const roleBadgeConfig = {
+    admin: { label: 'Quản trị viên', className: 'bg-purple-100 text-purple-700' },
+    class_council: { label: 'Cố vấn học tập', className: 'bg-orange-100 text-orange-700' },
+    student: { label: 'Sinh viên', className: 'bg-blue-100 text-blue-700' },
+  } as const;
+
   const columns: Column<StudentManagementItem>[] = [
-    {
-      key: 'username',
-      label: 'Mã đăng nhập',
-      width: '25%',
-      render: (val) => <span className="text-gray-700">{val as string}</span>,
-    },
     {
       key: 'fullName',
       label: 'Họ tên',
       width: '40%',
       render: (val) => <span className="font-medium text-[#1A1B1E]">{val as string}</span>,
+    },
+    {
+      key: 'role',
+      label: 'Vai trò',
+      width: '15%',
+      render: (val) => {
+        const config = roleBadgeConfig[(val as keyof typeof roleBadgeConfig) || 'student'] || roleBadgeConfig.student;
+        return (
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${config.className}`}>
+            {config.label}
+          </span>
+        );
+      },
     },
     {
       key: 'isActive',
@@ -282,43 +328,115 @@ export const AdminUsers = () => {
     },
   ];
 
-  const filterOptions = [
+  const statusFilterOptions = [
     { label: 'Tất cả', value: 'all' },
     { label: 'Hoạt động', value: 'active' },
     { label: 'Đang khóa', value: 'inactive' },
   ];
+  const roleFilterOptions = [
+    { label: 'Tất cả', value: 'all' },
+    { label: 'Sinh viên', value: 'student' },
+    { label: 'Cố vấn học tập', value: 'class_council' },
+    { label: 'Quản trị viên', value: 'admin' },
+  ];
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+    setQuery({ search: value }, { resetPage: true });
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value as 'all' | 'active' | 'inactive');
+    setPage(1);
+    setQuery({ status: value }, { resetPage: true });
+  };
+
+  const handleRoleChange = (value: string) => {
+    setRoleFilter(value as 'all' | 'student' | 'admin' | 'class_council');
+    setPage(1);
+    setQuery({ role: value }, { resetPage: true });
+  };
+
+  const handlePageChange = (value: number) => {
+    setPage(value);
+    setQuery({ page: value === 1 ? null : value });
+  };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA]">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý sinh viên</h1>
-        <button
-          onClick={() => { setEditingStudent(null); setShowModal(true); }}
-          className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-[#3B5BDB] text-white rounded-lg hover:bg-blue-700 font-semibold text-sm transition"
+    <div className="relative flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA] pb-24">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={handleSearchChange}
+          filterValue={statusFilter}
+          onFilterChange={handleStatusChange}
+          searchPlaceholder="Tên người dùng"
+          filterOptions={statusFilterOptions}
+          filterLabel="Trạng thái"
+          variant="inline"
         >
-          <Plus size={16} />
-          Thêm sinh viên
-        </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500">Vai trò:</span>
+            <select
+              value={roleFilter}
+              onChange={(e) => handleRoleChange(e.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+            >
+              {roleFilterOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </SearchFilterBar>
       </div>
 
-      <SearchFilterBar
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        filterValue={statusFilter}
-        onFilterChange={setStatusFilter as any}
-        searchPlaceholder="Tìm kiếm sinh viên..."
-        filterOptions={filterOptions}
-        filterLabel="Trạng thái"
-      />
+      {errorMsg && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-xs sm:text-sm font-semibold">
+          <AlertCircle size={18} className="shrink-0 text-red-600" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       <div className="flex-1 mt-4">
         <DataTable
           columns={columns}
           data={filteredStudents}
           pageSize={8}
-          emptyText="Không tìm thấy kết quả nào"
+          emptyText="Không tìm thấy người dùng nào"
           minHeight={400}
+          showSummary={false}
+          paginationAlign="left"
+          currentPage={page}
+          onPageChange={handlePageChange}
         />
+      </div>
+
+      <div className="fixed bottom-8 right-8 z-20 flex flex-col gap-3 sm:flex-row">
+        <button
+          onClick={() => setStudentModalOpen(true)}
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-full border border-blue-600 bg-white px-5 py-3 text-sm font-semibold text-blue-700 shadow-lg shadow-blue-900/10 transition hover:bg-blue-50"
+        >
+          <Plus size={18} />
+          Thêm sinh viên
+        </button>
+        <button
+          onClick={() => setImportOpen(true)}
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-full border border-emerald-600 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 shadow-lg shadow-emerald-900/10 transition hover:bg-emerald-50"
+        >
+          <Upload size={18} />
+          Nhập sinh viên từ Excel
+        </button>
+        <button
+          onClick={() => { setEditingStudent(null); setShowModal(true); }}
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0B3A82] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#104E92]"
+        >
+          <Plus size={18} />
+          Thêm người dùng
+        </button>
       </div>
 
       <ModalCreateStudent
@@ -326,9 +444,19 @@ export const AdminUsers = () => {
         onClose={handleCloseModal}
         onSubmit={handleSubmitModal}
         editData={editingStudent}
-        faculties={faculties}
-        majors={majors}
-        classes={classes}
+      />
+
+      <ModalCreateManualStudent
+        isOpen={studentModalOpen}
+        onClose={() => setStudentModalOpen(false)}
+        onSubmit={handleCreateManualStudent}
+        classes={classesList}
+      />
+
+      <ModalImportExcel
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={fetchStudents}
       />
 
       <ModalConfirm
@@ -342,10 +470,10 @@ export const AdminUsers = () => {
         }
         message={
           confirmType === 'delete'
-            ? `Bạn có chắc muốn xóa vĩnh viễn tài khoản của sinh viên ${pendingStudent?.fullName}?`
+            ? `Bạn có chắc muốn xóa vĩnh viễn tài khoản của người dùng ${pendingStudent?.fullName}?`
             : confirmType === 'lock'
-            ? `Bạn có chắc muốn tạm khóa tài khoản của sinh viên ${pendingStudent?.fullName}? Sinh viên này sẽ không thể đăng nhập vào hệ thống.`
-            : `Xác nhận mở khóa hoạt động trở lại cho sinh viên ${pendingStudent?.fullName}?`
+            ? `Bạn có chắc muốn tạm khóa tài khoản của người dùng ${pendingStudent?.fullName}? Người dùng này sẽ không thể đăng nhập vào hệ thống.`
+            : `Xác nhận mở khóa hoạt động trở lại cho người dùng ${pendingStudent?.fullName}?`
         }
         targetName={pendingStudent?.fullName}
         type={confirmType === 'delete' ? 'danger' : 'warning'}

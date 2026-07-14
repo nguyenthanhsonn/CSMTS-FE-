@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { X, Hash, BookOpen } from 'lucide-react';
+import { X, Hash, BookOpen, Download } from 'lucide-react';
 import type { Faculty, FacultyFormValues } from '../../types';
+import ModalImportFaculty from './modalImportFaculty';
 
 interface ModalCreateFacultyProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (values: FacultyFormValues) => void;
   editData?: Faculty | null;
+  onImported?: () => void;
 }
 
 const validationSchema = Yup.object({
@@ -32,8 +34,10 @@ export default function ModalCreateFaculty({
   onClose,
   onSubmit,
   editData,
+  onImported,
 }: ModalCreateFacultyProps) {
   const isEdit = !!editData;
+  const [importOpen, setImportOpen] = useState(false);
 
   const formik = useFormik<FacultyFormValues>({
     initialValues: editData ? { code: editData.code, name: editData.name } : defaultValues,
@@ -131,25 +135,48 @@ export default function ModalCreateFaculty({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 border-t border-[#E9ECEF] pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="cursor-pointer rounded-lg border border-[#DEE2E6] bg-white px-5 py-2.5 text-sm font-semibold text-[#495057] transition hover:bg-[#F8F9FA]"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={formik.isSubmitting}
-                className="cursor-pointer rounded-lg bg-[#3B5BDB] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4C6EF5] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isEdit ? 'Cập nhật' : 'Tạo khoa'}
-              </button>
+            <div className="flex items-center justify-between gap-3 border-t border-[#E9ECEF] pt-4">
+              {!isEdit ? (
+                <button
+                  type="button"
+                  onClick={() => setImportOpen(true)}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-emerald-600 bg-white px-4 py-2 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 select-none"
+                >
+                  <Download size={13} />
+                  Nhập từ Excel
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="cursor-pointer rounded-lg border border-[#DEE2E6] bg-white px-5 py-2 text-sm font-semibold text-[#495057] transition hover:bg-[#F8F9FA]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={formik.isSubmitting}
+                  className="cursor-pointer rounded-lg bg-[#0B3A82] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#104E92] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isEdit ? 'Cập nhật' : 'Tạo khoa'}
+                </button>
+              </div>
             </div>
           </form>
         </div>
       </div>
+
+      <ModalImportFaculty
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={() => {
+          onImported?.();
+        }}
+      />
     </>
   );
 }

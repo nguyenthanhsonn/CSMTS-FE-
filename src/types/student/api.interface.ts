@@ -5,7 +5,17 @@ export interface Semester {
   id: string;
   name: string;
   code?: string;
+  year?: number;
+  academicYear?: string;
+  semester?: 'HK1' | 'HK2' | 'SUMMER' | string;
+  semesterName?: string;
+  startDate?: string;
+  endDate?: string;
+  studentDeadline?: string;
+  classDeadline?: string;
+  facultyDeadline?: string;
   isActive?: boolean;
+  hasEvaluationForms?: boolean;
 }
 
 /** Năm học để chọn trong biểu mẫu. */
@@ -19,15 +29,16 @@ export interface AcademicYear {
 
 /** Thông tin cập nhật hồ sơ sinh viên. */
 export interface StudentProfileUpdatePayload {
-  phone?: string;
-  phoneNumber?: string;
-  dateOfBirth?: string;
+  fullName?: string;
+  phone?: string | null;
+  phoneNumber?: string | null;
+  dateOfBirth?: string | null;
 }
 
 /** Thông tin tạo phiếu đánh giá. */
 export interface CreateEvaluationPayload {
-  semester: string;
-  academicYear: string;
+  semester?: string;
+  academicYear?: string;
 }
 
 /** Thông tin cập nhật ghi chú phiếu. */
@@ -94,13 +105,11 @@ export interface ScoreSectionResponse {
 
 /** Thông tin thêm minh chứng bằng đường dẫn. */
 export interface LinkEvidenceUrlPayload {
-  evaluationId?: string;
   criteriaId?: string;
   criteriaCode?: string;
   url?: string;
   imageUrl?: string;
   publicId?: string;
-  title?: string;
   description?: string;
 }
 

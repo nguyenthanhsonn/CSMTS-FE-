@@ -2,7 +2,7 @@ import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestCo
 
 import type { RefreshTokenResponse } from '../types';
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api/v1';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://10.36.120.154:5050/api/v1';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -20,6 +20,7 @@ interface ApiErrorPayload {
 
 interface AuthRetryConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  skipAuth?: boolean;
   skipAuthRefresh?: boolean;
 }
 
@@ -41,6 +42,16 @@ function setStoredToken(key: 'accessToken' | 'refreshToken', value?: string) {
   localStorage.setItem(key, value);
 }
 
+function clearStoredAuth() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  localStorage.removeItem('user');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+}
+
 export const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
@@ -49,6 +60,11 @@ export const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
+  const authConfig = config as AuthRetryConfig;
+  if (authConfig.skipAuth) {
+    return config;
+  }
+
   const token = getStoredToken('accessToken');
 
   if (token && token !== 'mock-access-token') {
@@ -73,18 +89,32 @@ axiosInstance.interceptors.response.use(
       const refreshToken = getStoredToken('refreshToken');
 
       if (refreshToken && refreshToken !== 'mock-refresh-token') {
-        const refreshResponse = await axiosInstance.post<ApiResponse<RefreshTokenResponse>>(
-          '/auth/refresh-token',
-          { refreshToken },
-          { skipAuthRefresh: true } as AxiosRequestConfig
-        );
-        const tokenData = refreshResponse.data.data;
+        try {
+          const refreshResponse = await axiosInstance.post<ApiResponse<RefreshTokenResponse>>(
+            '/auth/refresh-token',
+            { refreshToken },
+            { skipAuthRefresh: true } as AxiosRequestConfig
+          );
+          const tokenData = refreshResponse.data.data;
 
-        setStoredToken('accessToken', tokenData.accessToken);
-        setStoredToken('refreshToken', tokenData.refreshToken);
-        originalRequest.headers.Authorization = `Bearer ${tokenData.accessToken}`;
+          setStoredToken('accessToken', tokenData.accessToken);
+          setStoredToken('refreshToken', tokenData.refreshToken);
+          originalRequest.headers.Authorization = `Bearer ${tokenData.accessToken}`;
 
-        return axiosInstance(originalRequest);
+          return axiosInstance(originalRequest);
+        } catch {
+          clearStoredAuth();
+
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.replace('/login');
+          }
+
+          const sessionError = new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.') as Error & {
+            statusCode?: number;
+          };
+          sessionError.statusCode = 401;
+          throw sessionError;
+        }
       }
     }
 

@@ -11,6 +11,7 @@ export interface Major {
   name: string;
   facultyId: string;
   isActive: boolean;
+  faculty?: Faculty;
 }
 
 export interface Class {
@@ -20,4 +21,21 @@ export interface Class {
   majorId: string;
   facultyId: string;
   isActive: boolean;
+  enrollmentYear?: number;
+  createdAt?: string;
+  deletedAt?: string | null;
+  studentCount?: number;
+  major?: Major;
+  faculty?: Faculty;
+  councils?: ClassCouncil[];
+}
+
+export interface ClassCouncil {
+  id: string;
+  userId: string;
+  username: string;
+  fullName: string;
+  email: string;
+  isActive: boolean;
+  assignedAt?: string;
 }

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { X, Hash, BookOpen, Building2, GraduationCap } from 'lucide-react';
+import { X, Hash, BookOpen, Building2, GraduationCap, Download } from 'lucide-react';
 import type { Class, ClassFormValues, Faculty, Major } from '../../types';
 
 interface ModalCreateClassProps {
@@ -226,21 +226,36 @@ export default function ModalCreateClass({
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 border-t border-[#E9ECEF] pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="cursor-pointer rounded-lg border border-[#DEE2E6] bg-white px-5 py-2.5 text-sm font-semibold text-[#495057] transition hover:bg-[#F8F9FA]"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={formik.isSubmitting}
-                className="cursor-pointer rounded-lg bg-[#3B5BDB] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4C6EF5] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isEdit ? 'Cập nhật' : 'Tạo lớp'}
-              </button>
+            <div className="flex items-center justify-between gap-3 border-t border-[#E9ECEF] pt-4">
+              {!isEdit ? (
+                <button
+                  type="button"
+                  onClick={() => alert('Tính năng import Excel cho quản lý Lớp học sẽ được hỗ trợ ở phiên bản tiếp theo.')}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-emerald-600 bg-white px-4 py-2 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 select-none"
+                >
+                  <Download size={13} />
+                  Nhập từ Excel
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="cursor-pointer rounded-lg border border-[#DEE2E6] bg-white px-5 py-2 text-sm font-semibold text-[#495057] transition hover:bg-[#F8F9FA]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={formik.isSubmitting}
+                  className="cursor-pointer rounded-lg bg-[#0B3A82] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#104E92] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isEdit ? 'Cập nhật' : 'Tạo lớp'}
+                </button>
+              </div>
             </div>
           </form>
         </div>

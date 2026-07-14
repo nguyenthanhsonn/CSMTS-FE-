@@ -6,10 +6,10 @@ export interface CouncilClass {
   id: string;
   name: string;
   studentCount: number;
-  facultyName: string;
-  academicYear: string;
-  semester: string;
-  schoolYear: string;
+  facultyName?: string;
+  academicYear?: string;
+  semester?: string;
+  schoolYear?: string;
 }
 
 interface ClassCardProps {
@@ -31,7 +31,7 @@ export default function ClassCard({ classItem, onOpen }: ClassCardProps) {
           </div>
           <div className="min-w-0">
             <h2 className="truncate text-base font-bold text-[#1A1B1E]">{classItem.name}</h2>
-            <p className="mt-1 text-sm text-[#868E96]">{classItem.facultyName}</p>
+            {classItem.facultyName && <p className="mt-1 text-sm text-[#868E96]">{classItem.facultyName}</p>}
           </div>
         </div>
         <ChevronRight size={18} className="mt-1 shrink-0 text-[#ADB5BD] transition group-hover:translate-x-0.5 group-hover:text-[#3B5BDB]" />
@@ -42,12 +42,14 @@ export default function ClassCard({ classItem, onOpen }: ClassCardProps) {
           <Users size={13} className="mr-1" />
           {classItem.studentCount} SV
         </span>
-        <span className="ui-badge bg-[#EDF2FF] text-[#3B5BDB]">{classItem.academicYear}</span>
-        <span className="ui-badge bg-[#FFF9DB] text-[#E67700]">
-          <CalendarDays size={13} className="mr-1" />
-          {classItem.semester}
-        </span>
-        <span className="ui-badge bg-[#EBFBEE] text-[#2F9E44]">{classItem.schoolYear}</span>
+        {classItem.academicYear && <span className="ui-badge bg-[#EDF2FF] text-[#3B5BDB]">{classItem.academicYear}</span>}
+        {classItem.semester && (
+          <span className="ui-badge bg-[#FFF9DB] text-[#E67700]">
+            <CalendarDays size={13} className="mr-1" />
+            {classItem.semester}
+          </span>
+        )}
+        {classItem.schoolYear && <span className="ui-badge bg-[#EBFBEE] text-[#2F9E44]">{classItem.schoolYear}</span>}
       </div>
     </button>
   );

@@ -23,22 +23,29 @@ import type {
 
 /** Lấy hồ sơ sinh viên. */
 async function getMyProfile(_accessToken?: string) {
-  return get<StudentProfile>('/students/me');
+  void _accessToken;
+  return get<StudentProfile>('/profile');
 }
 
 /** Cập nhật hồ sơ sinh viên. */
 async function updateMyProfile(payload: StudentProfileUpdatePayload) {
-  return patch<StudentProfile>('/students/me', payload);
+  return patch<StudentProfile>('/profile', payload);
 }
 
 /** Lấy danh sách phiếu của sinh viên. */
 async function getMyEvaluationList(_accessToken?: string) {
+  void _accessToken;
   return get<StudentEvaluation[]>('/students/me/evaluations');
 }
 
 /** Lấy danh sách học kỳ. */
 async function getSemesters() {
   return get<Semester[]>('/semesters');
+}
+
+/** Lấy học kỳ đang mở. */
+async function getCurrentSemester() {
+  return get<Semester>('/semesters/current');
 }
 
 /** Lấy danh sách năm học. */
@@ -73,6 +80,7 @@ async function createEvaluation(_accessTokenOrPayload: string | CreateEvaluation
 
 /** Lấy phiếu đánh giá của sinh viên. */
 async function getMyEvaluations(_accessToken?: string) {
+  void _accessToken;
   return get<StudentEvaluation[]>('/training-evaluations/me');
 }
 
@@ -188,7 +196,7 @@ async function getNotifications(query?: NotificationListQuery) {
 
 /** Lấy số thông báo chưa đọc. */
 async function getUnreadCount() {
-  return get<{ count: number }>('/notifications/unread-count');
+  return get<{ unreadCount: number }>('/notifications/unread-count');
 }
 
 /** Đánh dấu một thông báo đã đọc. */
@@ -219,16 +227,19 @@ function updateScoreSection(
 
 /** Lấy hồ sơ sinh viên cho màn cũ. */
 async function getProfile(_accessToken?: string) {
+  void _accessToken;
   return getMyProfile();
 }
 
 /** Cập nhật hồ sơ sinh viên cho màn cũ. */
 async function updateProfile(_accessToken: string, phone: string) {
+  void _accessToken;
   return updateMyProfile({ phone });
 }
 
 /** Lấy danh sách phiếu cho màn cũ. */
 async function getEvaluations(_accessToken?: string) {
+  void _accessToken;
   return getMyEvaluationList();
 }
 
@@ -237,6 +248,7 @@ export const API_Student = {
   updateMyProfile,
   getMyEvaluationList,
   getSemesters,
+  getCurrentSemester,
   getAcademicYears,
   getFaculties,
   getMajors,

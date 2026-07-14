@@ -2,7 +2,7 @@ export interface StudentManagementItem {
   id: string;
   username: string;
   fullName: string;
-  role: 'student' | 'admin';
+  role: 'student' | 'admin' | 'class_council';
   email?: string;
   phone?: string;
   dateOfBirth?: string;
@@ -10,8 +10,21 @@ export interface StudentManagementItem {
   facultyId?: string;
   majorId?: string;
   classId?: string;
+  classIds?: string[];
   admissionYear?: string;
   isActive: boolean;
+  accountEmailSent?: boolean;
+  accountEmailError?: string;
+  managedClasses?: Array<{
+    id?: string;
+    assignmentId?: string;
+    classId?: string;
+    code?: string;
+    classCode?: string;
+    name?: string;
+    className?: string;
+    assignedAt?: string;
+  }>;
 }
 
 export interface ClassListStudentItem {

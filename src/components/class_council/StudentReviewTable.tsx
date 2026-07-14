@@ -2,7 +2,7 @@
 
 import { ClipboardCheck } from 'lucide-react';
 
-export type StudentReviewStatus = 'not_submitted' | 'pending' | 'approved' | 'returned';
+export type StudentReviewStatus = 'not_submitted' | 'submitted';
 
 export interface CouncilStudentReview {
   id: string;
@@ -19,9 +19,7 @@ interface StudentReviewTableProps {
 
 const statusMeta: Record<StudentReviewStatus, { label: string; className: string }> = {
   not_submitted: { label: 'Chưa nộp', className: 'bg-[#F1F3F5] text-[#495057]' },
-  pending: { label: 'Chờ duyệt', className: 'bg-[#FFF9DB] text-[#E67700]' },
-  approved: { label: 'Đã duyệt', className: 'bg-[#EBFBEE] text-[#2F9E44]' },
-  returned: { label: 'Trả về', className: 'bg-[#FFF5F5] text-[#C92A2A]' },
+  submitted: { label: 'Đã nộp', className: 'bg-[#EBFBEE] text-[#2F9E44]' },
 };
 
 export function getReviewStatusMeta(status: StudentReviewStatus) {
@@ -54,7 +52,7 @@ export default function StudentReviewTable({ students, onReview }: StudentReview
                     <span className={`ui-badge ${status.className}`}>{status.label}</span>
                   </td>
                   <td className="border-b border-[#E9ECEF] px-4 py-4">
-                    {student.selfScore === null ? (
+                    {student.status !== 'submitted' ? (
                       <span className="text-[#868E96]">-</span>
                     ) : (
                       <button

@@ -1,30 +1,42 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { API_Admin } from '../../api/API_Admin';
 import type { Class, ClassFormValues, Faculty, Major } from '../../types';
 import ModalCreateClass from '../../components/admin/modalCreateClass';
 import ModalConfirm from '../../components/common/modalConfirm';
 import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import DataTable, { type Column } from '../../components/admin/DataTable';
+import { getUserFriendlyError, toArray } from '../../utils/adminData';
+import { AdminClassList } from './ClassList';
+import { useAdminUrlState } from '../../utils/adminUrlState';
+
+type ClassTableRow = Class & {
+  majorName: string;
+  facultyName: string;
+};
 
 export const AdminClasses = () => {
-  const [classes, setClasses] = useState<Class[]>([]);
+  const [classes, setClasses] = useState<ClassTableRow[]>([]);
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const { getPage, getValue, setQuery } = useAdminUrlState();
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => getValue('search'));
   const [showModal, setShowModal] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  const [facultyFilter, setFacultyFilter] = useState('');
-  const [majorFilter, setMajorFilter] = useState('');
+  const [facultyFilter, setFacultyFilter] = useState(() => getValue('facultyId'));
+  const [majorFilter, setMajorFilter] = useState(() => getValue('majorId'));
+  const [page, setPage] = useState(() => getPage());
+
+  const [viewingClassId, setViewingClassId] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -36,11 +48,60 @@ export const AdminClasses = () => {
         API_Admin.getClasses(),
       ]);
 
-      setFaculties((facs || []).map((f: any) => ({ id: f.id, code: f.code || '', name: f.name || '', isActive: f.isActive ?? true })));
-      setMajors((majs || []).map((m: any) => ({ id: m.id, code: m.code || '', name: m.name || '', facultyId: m.facultyId || '', isActive: m.isActive ?? true })));
-      setClasses((clss || []).map((c: any) => ({ id: c.id, code: c.code || '', name: c.name || '', facultyId: c.facultyId || '', majorId: c.majorId || '', isActive: c.isActive ?? true })));
+      const normalizedFaculties = toArray(facs as any).map((f: any) => ({
+        id: f.id || f._id || '',
+        code: f.code || '',
+        name: f.name || '',
+        isActive: f.isActive ?? true,
+      }));
+
+      const normalizedMajors = toArray(majs as any).map((m: any) => ({
+        id: m.id || m._id || '',
+        code: m.code || '',
+        name: m.name || '',
+        facultyId: m.facultyId || m.faculty_id || m.faculty?.id || m.faculty?._id || '',
+        isActive: m.isActive ?? true,
+      }));
+
+      const normalizedClasses = toArray(clss as any).map((c: any) => {
+        const majorId = c.majorId || c.major_id || c.major?.id || c.major?._id || '';
+        const facultyId =
+          c.facultyId ||
+          c.faculty_id ||
+          c.faculty?.id ||
+          c.faculty?._id ||
+          c.major?.facultyId ||
+          c.major?.faculty_id ||
+          c.major?.faculty?.id ||
+          c.major?.faculty?._id ||
+          normalizedMajors.find((m) => m.id === majorId)?.facultyId ||
+          '';
+        const majorName = c.major?.name || normalizedMajors.find((m) => m.id === majorId)?.name || '—';
+        const facultyName =
+          c.major?.faculty?.name ||
+          c.faculty?.name ||
+          normalizedFaculties.find((f) => f.id === facultyId)?.name ||
+          '—';
+
+        return {
+          id: c.id || c._id || '',
+          code: c.code || '',
+          name: c.name || '',
+          facultyId,
+          majorId,
+          major: c.major,
+          majorName,
+          facultyName,
+          enrollmentYear: c.enrollmentYear,
+          isActive: c.isActive ?? true,
+        };
+      });
+
+      setFaculties(normalizedFaculties);
+      setMajors(normalizedMajors);
+      setClasses(normalizedClasses);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Không thể tải thông tin danh mục lớp học.');
+      setErrorMsg(getUserFriendlyError(err, 'Không thể tải thông tin lớp học. Vui lòng thử lại sau.'));
     } finally {
       setLoading(false);
     }
@@ -59,12 +120,6 @@ export const AdminClasses = () => {
 
     return matchSearch && matchFaculty && matchMajor;
   });
-
-  const getMajorName = (majorId: string) =>
-    majors.find((m) => m.id === majorId)?.name ?? '—';
-
-  const getFacultyName = (facultyId: string) =>
-    faculties.find((f) => f.id === facultyId)?.name ?? '—';
 
   const handleDelete = (id: string) => {
     setPendingDeleteId(id);
@@ -107,11 +162,18 @@ export const AdminClasses = () => {
         majorId: values.majorId,
         isActive: true,
       };
-      setClasses((prev) => [...prev, newClass]);
+      setClasses((prev) => [
+        ...prev,
+        {
+          ...newClass,
+          majorName: majors.find((m) => m.id === values.majorId)?.name || '—',
+          facultyName: faculties.find((f) => f.id === values.facultyId)?.name || '—',
+        },
+      ]);
     }
   };
 
-  const columns: Column<Class>[] = [
+  const columns: Column<ClassTableRow>[] = [
     {
       key: 'code',
       label: 'Mã lớp',
@@ -121,36 +183,42 @@ export const AdminClasses = () => {
     {
       key: 'name',
       label: 'Tên lớp',
-      width: '30%',
+      width: '25%',
       render: (val) => <span className="font-medium">{val as string}</span>,
     },
     {
-      key: 'majorId',
+      key: 'majorName',
       label: 'Ngành',
       width: '20%',
-      render: (val) => <span className="text-gray-600">{getMajorName(val as string)}</span>,
+      render: (val) => <span className="text-gray-600">{val as string}</span>,
     },
     {
-      key: 'facultyId',
+      key: 'facultyName',
       label: 'Khoa',
       width: '20%',
-      render: (val) => <span className="text-gray-600">{getFacultyName(val as string)}</span>,
+      render: (val) => <span className="text-gray-600">{val as string}</span>,
     },
     {
       key: 'actions',
       label: 'Thao tác',
-      width: '15%',
+      width: '20%',
       render: (_, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => handleOpenEdit(row)}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleOpenEdit(row);
+            }}
             className="p-2 cursor-pointer text-blue-600 hover:bg-blue-50 rounded-lg"
             title="Chỉnh sửa"
           >
             <Edit size={18} />
           </button>
           <button
-            onClick={() => handleDelete(row.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleDelete(row.id);
+            }}
             className="p-2 cursor-pointer text-red-600 hover:bg-red-50 rounded-lg"
             title="Xóa"
           >
@@ -168,17 +236,72 @@ export const AdminClasses = () => {
       .map((f) => ({ label: f.name, value: f.id })),
   ];
 
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+    setQuery({ search: value }, { resetPage: true });
+  };
+
+  const handleFacultyChange = (value: string) => {
+    setFacultyFilter(value);
+    setMajorFilter('');
+    setPage(1);
+    setQuery({ facultyId: value, majorId: null }, { resetPage: true });
+  };
+
+  const handleMajorChange = (value: string) => {
+    setMajorFilter(value);
+    setPage(1);
+    setQuery({ majorId: value }, { resetPage: true });
+  };
+
+  const handlePageChange = (value: number) => {
+    setPage(value);
+    setQuery({ page: value === 1 ? null : value });
+  };
+
+  if (viewingClassId) {
+    return (
+      <AdminClassList
+        preSelectedClassId={viewingClassId}
+        onBack={() => setViewingClassId(null)}
+      />
+    );
+  }
+
   return (
-    <div className="flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="relative flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA] pb-24">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý Lớp</h1>
-        <button
-          onClick={() => { setEditingClass(null); setShowModal(true); }}
-          className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-[#3B5BDB] text-white rounded-lg hover:bg-blue-700 font-semibold text-sm transition"
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={handleSearchChange}
+          filterValue={facultyFilter}
+          onFilterChange={handleFacultyChange}
+          searchPlaceholder="Tên lớp..."
+          filterOptions={facultyFilterOptions}
+          filterLabel="Khoa"
+          variant="inline"
         >
-          <Plus size={16} />
-          Thêm lớp
-        </button>
+          <div className="relative shrink-0">
+            <select
+              value={majorFilter}
+              onChange={(e) => handleMajorChange(e.target.value)}
+              className="appearance-none rounded-xl border border-gray-200 bg-white pl-4 pr-10 py-2.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer min-w-[160px] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!facultyFilter}
+            >
+              <option value="">Ngành: Tất cả</option>
+              {majors
+                .filter((m) => m.isActive && (!facultyFilter || m.facultyId === facultyFilter))
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+          </div>
+        </SearchFilterBar>
       </div>
 
       {errorMsg && (
@@ -195,39 +318,6 @@ export const AdminClasses = () => {
         </div>
       ) : (
         <>
-          <SearchFilterBar
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            filterValue={facultyFilter}
-            onFilterChange={(val) => {
-              setFacultyFilter(val);
-              setMajorFilter(''); // Reset major on faculty change
-            }}
-            searchPlaceholder="Tìm kiếm lớp..."
-            filterOptions={facultyFilterOptions}
-            filterLabel="Khoa"
-          >
-            {/* Major Filter select dropdown inside children */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-500">Ngành:</span>
-              <select
-                value={majorFilter}
-                onChange={(e) => setMajorFilter(e.target.value)}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 bg-white"
-                disabled={!facultyFilter}
-              >
-                <option value="">Tất cả</option>
-                {majors
-                  .filter((m) => m.isActive && (!facultyFilter || m.facultyId === facultyFilter))
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </SearchFilterBar>
-
           <div className="flex-1 mt-4">
             <DataTable
               columns={columns}
@@ -235,10 +325,23 @@ export const AdminClasses = () => {
               pageSize={8}
               emptyText="Không tìm thấy lớp nào"
               minHeight={400}
+              showSummary={false}
+              paginationAlign="left"
+              currentPage={page}
+              onPageChange={handlePageChange}
+              onRowClick={(row) => setViewingClassId(row.id)}
             />
           </div>
         </>
       )}
+
+      <button
+        onClick={() => { setEditingClass(null); setShowModal(true); }}
+        className="fixed bottom-8 right-8 z-20 flex cursor-pointer items-center gap-2 rounded-full bg-[#0B3A82] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#104E92]"
+      >
+        <Plus size={18} />
+        Thêm lớp
+      </button>
 
       <ModalCreateClass
         isOpen={showModal}

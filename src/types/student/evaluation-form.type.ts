@@ -16,10 +16,14 @@ import type {
 export type EvaluationStatus =
   | 'draft'
   | 'submitted'
-  | 'class_reviewed'
-  | 'advisor_reviewed'
-  | 'faculty_approved'
-  | 'rejected';
+  | 'class_approved'
+  | 'finalized'
+  | 'rejected'
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'CLASS_APPROVED'
+  | 'FINALIZED'
+  | 'REJECTED';
 
 export interface EvaluationPeriod {
   semester: string;
@@ -40,6 +44,9 @@ export interface EvaluationForm {
   rank?: string;
   period: EvaluationPeriod;
   status: EvaluationStatus;
+  isLocked?: boolean;
+  lockedAt?: string | null;
+  semesterIsActive?: boolean;
   academicPerformance: AcademicPerformance;
   discipline: DisciplineViolation;
   politicalSocial: PoliticalSocialActivity;

@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle2, FileText, Loader2, Paperclip, RotateCcw } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, Paperclip, Send } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import CouncilCriteriaReviewTable from '@/components/class_council/CouncilCriteriaReviewTable';
 import EvidenceReviewModal, { type ReviewEvidence } from '@/components/class_council/EvidenceReviewModal';
-import ModalConfirm from '@/components/common/modalConfirm';
 
 interface ReviewStudent {
   id: string;
@@ -48,11 +47,10 @@ export function StudentDetailReviewView() {
   const [loading, setLoading] = useState(true);
   const [hasEvaluation, setHasEvaluation] = useState(false);
   const [, setIsClassEdited] = useState(false);
-  const [note, setNote] = useState('');
   const [evidences, setEvidences] = useState<ReviewEvidence[]>(mockEvidences);
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false);
-  const [returnModalOpen, setReturnModalOpen] = useState(false);
-  const [returnReason, setReturnReason] = useState('');
+  const [isSuspended, setIsSuspended] = useState(false);
+  const [isSubmittedLate, setIsSubmittedLate] = useState(false);
 
   const [isSvViolationSec1, setIsSvViolationSec1] = useState(false);
   const [isClassViolationSec1, setIsClassViolationSec1] = useState(false);
@@ -245,14 +243,6 @@ export function StudentDetailReviewView() {
     router.push(`/class_council/${classId}`);
   };
 
-  const handleReturn = () => {
-    if (!returnReason.trim()) return;
-
-    // TODO: nối API trả phiếu về sinh viên kèm lý do.
-    setReturnModalOpen(false);
-    router.push(`/class_council/${classId}`);
-  };
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 p-4 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -310,6 +300,28 @@ export function StudentDetailReviewView() {
               <Paperclip size={16} />
               Xem minh chứng đính kèm
             </button>
+          </div>
+
+          {/* Special Compliance Flags */}
+          <div className="flex flex-col sm:flex-row gap-4 p-4 bg-red-50/40 border border-red-100 rounded-xl">
+            <label className="flex items-center gap-2 text-xs font-bold text-red-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isSuspended}
+                onChange={(e) => setIsSuspended(e.target.checked)}
+                className="h-4 w-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+              />
+              Bị đình chỉ học tập từ 30 ngày trở xuống (Xếp loại không quá Khá)
+            </label>
+            <label className="flex items-center gap-2 text-xs font-bold text-amber-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isSubmittedLate}
+                onChange={(e) => setIsSubmittedLate(e.target.checked)}
+                className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+              />
+              Nộp phiếu trễ hạn / Không đúng hạn (Xếp loại Yếu/Kém)
+            </label>
           </div>
 
           <CouncilCriteriaReviewTable
@@ -427,32 +439,15 @@ export function StudentDetailReviewView() {
             removeFile={removeFile}
           />
 
-          <div className="rounded-xl border border-[#E9ECEF] bg-white p-4 shadow-sm">
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#868E96]">Ghi chú chung</label>
-            <textarea
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              className="min-h-[110px] w-full rounded-lg border border-[#DEE2E6] p-3 text-sm text-[#1A1B1E] outline-none transition focus:border-[#4C6EF5] focus:ring-2 focus:ring-[#4C6EF5]/20"
-              placeholder="Nhập ghi chú cho phiếu đánh giá"
-            />
-            <div className="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={() => setReturnModalOpen(true)}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#C92A2A] bg-white px-4 py-2.5 text-sm font-semibold text-[#C92A2A] transition hover:bg-[#FFF5F5]"
-              >
-                <RotateCcw size={16} />
-                Trả về sinh viên
-              </button>
-              <button
-                type="button"
-                onClick={handleApprove}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#3B5BDB] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4C6EF5]"
-              >
-                <CheckCircle2 size={16} />
-                Duyệt phiếu
-              </button>
-            </div>
+          <div className="mt-6 flex justify-end">
+            <button
+              type="button"
+              onClick={handleApprove}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] shadow-sm min-h-[44px]"
+            >
+              <Send size={15} />
+              Gửi phê duyệt
+            </button>
           </div>
         </>
       )}
@@ -463,22 +458,6 @@ export function StudentDetailReviewView() {
         onClose={() => setEvidenceModalOpen(false)}
         onApprove={(evidenceId) => updateEvidence(evidenceId, { status: 'approved', rejectReason: undefined })}
         onReject={(evidenceId, reason) => updateEvidence(evidenceId, { status: 'rejected', rejectReason: reason })}
-      />
-
-      <ModalConfirm
-        isOpen={returnModalOpen}
-        title="Trả phiếu về sinh viên"
-        message="Vui lòng nhập lý do trước khi trả phiếu để sinh viên chỉnh sửa."
-        type="warning"
-        confirmText="Trả về"
-        cancelText="Hủy"
-        hasReasonInput
-        reasonValue={returnReason}
-        reasonLabel="Lý do trả phiếu"
-        reasonPlaceholder="Nhập lý do trả phiếu cho sinh viên"
-        onReasonChange={setReturnReason}
-        onConfirm={handleReturn}
-        onCancel={() => setReturnModalOpen(false)}
       />
     </div>
   );
