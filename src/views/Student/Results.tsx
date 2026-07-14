@@ -16,10 +16,10 @@ export const StudentResults = () => {
   const getStudyScoreNum = (level: string, activities: any[]) => {
     let base = 0;
     if (level === 'GTE_9') base = 6;
-    else if (level === 'FROM_7_TO_9') base = 5;
-    else if (level === 'FROM_5_TO_7') base = 4;
-    else if (level === 'FROM_4_TO_5') base = 2;
-    else if (level === 'FROM_1_TO_4') base = 1;
+    else if (level === 'FROM_7_TO_UNDER_9') base = 5;
+    else if (level === 'FROM_5_TO_UNDER_7') base = 4;
+    else if (level === 'FROM_4_TO_UNDER_5') base = 2;
+    else if (level === 'FROM_1_TO_UNDER_4') base = 1;
     
     const actScore = (activities || []).length * 2;
     return Math.min(20, base + actScore);
@@ -33,14 +33,14 @@ export const StudentResults = () => {
     let total = 0;
     if (actData.politicalActivityLevel === 'GOOD_PARTICIPATION') total += 5;
     if (actData.cultureSportLevel === 'FULL_EFFECTIVE_PARTICIPATION') total += 5;
-    if (actData.clubActivityLevel === 'LEADER_OR_ORGANIZER') total += 5;
+    if (actData.clubActivityLevel === 'FULL_EFFECTIVE_PARTICIPATION') total += 5;
     return Math.min(20, total + (actData.rewardScore || 0));
   };
 
   const getCommScoreNum = (commData: any) => {
     let total = 0;
     if (commData.lawComplianceLevel === 'EXCELLENT') total += 10;
-    if (commData.volunteerActivityLevel === 'EXCELLENT') total += 10;
+    if (commData.volunteerActivityLevel === 'ACTIVE_WITH_REWARD') total += 10;
     return Math.min(20, total);
   };
 

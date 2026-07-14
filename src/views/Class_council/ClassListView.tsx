@@ -4,41 +4,42 @@ import { useEffect, useMemo, useState } from 'react';
 import { Loader2, School } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ClassCard, { type CouncilClass } from '@/components/class_council/ClassCard';
-
-const mockClasses: CouncilClass[] = [
-  {
-    id: 'cntt01',
-    name: 'Lớp CNTT01',
-    studentCount: 45,
-    facultyName: 'Khoa Công nghệ thông tin',
-    academicYear: 'Khóa 2022',
-    semester: 'HK Hè',
-    schoolYear: 'Năm học 2023-2024',
-  },
-  {
-    id: 'cntt02',
-    name: 'Lớp CNTT02',
-    studentCount: 42,
-    facultyName: 'Khoa Công nghệ thông tin',
-    academicYear: 'Khóa 2022',
-    semester: 'HK Hè',
-    schoolYear: 'Năm học 2023-2024',
-  },
-];
+import { useAuthStore } from '@/store/authStore';
 
 export function ClassListView() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const user = useAuthStore((state) => state.user);
+  const refreshProfile = useAuthStore((state) => state.refreshProfile);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   useEffect(() => {
-    // TODO: nối API lấy danh sách lớp phụ trách của giảng viên chủ nhiệm.
-    const timer = window.setTimeout(() => setLoading(false), 250);
-    return () => window.clearTimeout(timer);
-  }, []);
+    const syncProfile = async () => {
+      try {
+        setLoadingProfile(true);
+        await refreshProfile();
+      } catch {
+        // Giữ trang ổn định nếu phiên đăng nhập hết hạn hoặc profile tạm thời chưa lấy được.
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
 
-  const classes = useMemo(() => mockClasses, []);
+    syncProfile();
+  }, [refreshProfile]);
 
-  // TODO: auto-redirect thẳng sang Trang 2 nếu chỉ có 1 lớp, khi có API thật.
+  const classes = useMemo<CouncilClass[]>(() => {
+    const managedClasses = user?.managedClasses ?? [];
+
+    return managedClasses
+      .map((item) => ({
+        id: item.classId || item.id || '',
+        name: item.className || item.name || item.classCode || item.code || 'Lớp phụ trách',
+        studentCount: item.studentCount ?? 0,
+        facultyName: item.faculty?.name || item.facultyName || '',
+        academicYear: item.enrollmentYear ? `Khóa ${item.enrollmentYear}` : '',
+      }))
+      .filter((item) => item.id);
+  }, [user?.managedClasses]);
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 p-4 sm:p-6">
@@ -47,10 +48,10 @@ export function ClassListView() {
         <p className="mt-1 text-sm text-[#868E96]">Danh sách lớp đang phụ trách.</p>
       </div>
 
-      {loading ? (
+      {loadingProfile ? (
         <div className="flex min-h-[360px] flex-col items-center justify-center gap-2.5 rounded-xl border border-[#E9ECEF] bg-white p-6 shadow-sm">
           <Loader2 className="animate-spin text-[#3B5BDB]" size={34} />
-          <p className="text-sm font-semibold text-[#868E96]">Đang tải danh sách lớp...</p>
+          <p className="text-sm font-semibold text-[#868E96]">Đang tải danh sách lớp phụ trách...</p>
         </div>
       ) : classes.length === 0 ? (
         <div className="flex min-h-[360px] flex-col items-center justify-center rounded-xl border border-dashed border-[#DEE2E6] bg-white p-6 text-center">

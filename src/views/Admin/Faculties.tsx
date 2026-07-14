@@ -8,21 +8,25 @@ import ModalCreateFaculty from '../../components/admin/modalCreateFaculty';
 import ModalConfirm from '../../components/common/modalConfirm';
 import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import DataTable, { type Column } from '../../components/admin/DataTable';
+import { getUserFriendlyError, toArray } from '../../utils/adminData';
+import { useAdminUrlState } from '../../utils/adminUrlState';
 
 export const AdminFaculties = () => {
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const { getPage, getValue, setQuery } = useAdminUrlState({ status: 'all' });
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => getValue('search'));
   const [showModal, setShowModal] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState(() => getValue('status', 'all'));
+  const [page, setPage] = useState(() => getPage());
 
   const loadFaculties = async () => {
     try {
@@ -30,7 +34,7 @@ export const AdminFaculties = () => {
       setErrorMsg('');
       const data = await API_Admin.getFaculties();
       // Ensure the returned data has appropriate defaults for Faculty type
-      const normalized: Faculty[] = (data || []).map((f: any) => ({
+      const normalized: Faculty[] = toArray(data as any).map((f: any) => ({
         id: f.id,
         code: f.code || '',
         name: f.name || '',
@@ -38,7 +42,7 @@ export const AdminFaculties = () => {
       }));
       setFaculties(normalized);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Không thể tải danh sách khoa.');
+      setErrorMsg(getUserFriendlyError(err, 'Không thể tải danh sách khoa. Vui lòng thử lại sau.'));
     } finally {
       setLoading(false);
     }
@@ -72,7 +76,7 @@ export const AdminFaculties = () => {
       await API_Admin.updateFacultyStatus(id, { isActive: !faculty.isActive });
       await loadFaculties();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Không thể cập nhật trạng thái khoa.');
+      setErrorMsg(getUserFriendlyError(err, 'Không thể cập nhật trạng thái khoa. Vui lòng thử lại.'));
     } finally {
       setActionLoading(false);
     }
@@ -95,8 +99,7 @@ export const AdminFaculties = () => {
       await loadFaculties();
     } catch (err: any) {
       setErrorMsg(
-        err.message || 
-        'Không thể xóa khoa này. Khoa có thể đã có ngành học hoặc phân công hội đồng liên kết.'
+        getUserFriendlyError(err, 'Không thể xóa khoa này. Khoa có thể đã có ngành học hoặc phân công hội đồng liên kết.')
       );
       setConfirmOpen(false);
       setPendingDeleteId(null);
@@ -134,7 +137,7 @@ export const AdminFaculties = () => {
       setEditingFaculty(null);
       await loadFaculties();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Lỗi lưu thông tin khoa. Vui lòng kiểm tra lại mã khoa.');
+      setErrorMsg(getUserFriendlyError(err, 'Không thể lưu thông tin khoa. Vui lòng kiểm tra lại mã khoa.'));
     } finally {
       setActionLoading(false);
     }
@@ -207,17 +210,37 @@ export const AdminFaculties = () => {
     { label: 'Đang ẩn', value: 'inactive' },
   ];
 
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+    setQuery({ search: value }, { resetPage: true });
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+    setQuery({ status: value }, { resetPage: true });
+  };
+
+  const handlePageChange = (value: number) => {
+    setPage(value);
+    setQuery({ page: value === 1 ? null : value });
+  };
+
   return (
-    <div className="flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="relative flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA] pb-24">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý Khoa</h1>
-        <button
-          onClick={() => handleOpenModal()}
-          className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-[#3B5BDB] text-white rounded-lg hover:bg-blue-700 font-semibold text-sm transition"
-        >
-          <Plus size={16} />
-          Thêm khoa
-        </button>
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={handleSearchChange}
+          filterValue={statusFilter}
+          onFilterChange={handleStatusChange}
+          searchPlaceholder="Tên khoa"
+          filterOptions={filterOptions}
+          filterLabel="Trạng thái"
+          variant="inline"
+        />
       </div>
 
       {errorMsg && (
@@ -226,16 +249,6 @@ export const AdminFaculties = () => {
           <span>{errorMsg}</span>
         </div>
       )}
-
-      <SearchFilterBar
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        filterValue={statusFilter}
-        onFilterChange={setStatusFilter}
-        searchPlaceholder="Tìm kiếm khoa..."
-        filterOptions={filterOptions}
-        filterLabel="Trạng thái"
-      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[300px] gap-2.5">
@@ -250,15 +263,28 @@ export const AdminFaculties = () => {
             pageSize={8}
             emptyText="Không tìm thấy khoa nào"
             minHeight={400}
+            showSummary={false}
+            paginationAlign="left"
+            currentPage={page}
+            onPageChange={handlePageChange}
           />
         </div>
       )}
+
+      <button
+        onClick={() => handleOpenModal()}
+        className="fixed bottom-8 right-8 z-20 flex cursor-pointer items-center gap-2 rounded-full bg-[#0B3A82] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#104E92]"
+      >
+        <Plus size={18} />
+        Thêm khoa
+      </button>
 
       <ModalCreateFaculty
         isOpen={showModal}
         onClose={handleCloseModal}
         onSubmit={handleSubmitModal}
         editData={editingFaculty}
+        onImported={loadFaculties}
       />
 
       <ModalConfirm

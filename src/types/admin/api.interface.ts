@@ -16,11 +16,25 @@ export interface PaginatedResponse<T> {
 
 /** Thông tin tạo tài khoản. */
 export interface CreateUserPayload {
+  username: string;
   email: string;
   fullName: string;
   role: string;
   password?: string;
-  username?: string;
+  phone?: string;
+  dateOfBirth?: string;
+}
+
+/** Thông tin tạo sinh viên thủ công. */
+export interface CreateStudentPayload {
+  username: string;
+  email: string;
+  fullName: string;
+  password: string;
+  phone?: string;
+  dateOfBirth?: string;
+  studentCode?: string;
+  classId?: string;
 }
 
 /** Điều kiện xem danh sách người dùng. */
@@ -47,15 +61,24 @@ export interface ReopenEvaluationPayload {
 
 /** Thông tin hội đồng lớp ghi điểm. */
 export interface ReviewScoresPayload {
-  scores?: Record<string, number>;
-  note?: string;
-  action?: 'review' | 'approve' | 'reject';
+  scores: Array<{
+    criteriaCode: string;
+    classScore: number;
+    reviewerNote?: string;
+  }>;
 }
 
 /** Thông tin duyệt hoặc từ chối phiếu. */
 export interface ReviewEvaluationPayload {
   action: 'approve' | 'reject';
+  classScore?: number;
+  comment?: string;
   note?: string;
+}
+
+/** Thông tin admin phê duyệt cuối. */
+export interface FinalizeEvaluationPayload {
+  finalScore?: number;
 }
 
 /** Thông tin khoa. */
@@ -76,6 +99,38 @@ export interface StatusPayload {
   isActive: boolean;
 }
 
+export interface SemesterQuery extends PaginationQuery {
+  year?: number;
+  isActive?: boolean;
+}
+
+export interface AdminSemester {
+  id: string;
+  year: number;
+  academicYear: string;
+  semester: 'HK1' | 'HK2' | 'SUMMER' | string;
+  semesterName?: string;
+  name?: string;
+  startDate: string;
+  endDate: string;
+  studentDeadline?: string | null;
+  classDeadline?: string | null;
+  facultyDeadline?: string | null;
+  isActive: boolean;
+  hasEvaluationForms?: boolean;
+}
+
+export interface SemesterPayload {
+  year?: number;
+  semester?: string;
+  startDate?: string;
+  endDate?: string;
+  studentDeadline?: string;
+  classDeadline?: string;
+  facultyDeadline?: string;
+  isActive?: boolean;
+}
+
 /** Thông tin thêm sinh viên vào lớp. */
 export interface AddStudentToClassPayload {
   studentId: string;
@@ -88,11 +143,123 @@ export interface ImportStudentsPayload {
 }
 
 /** Kết quả nhập danh sách sinh viên. */
+export interface CreatedAccount {
+  username: string;
+  email: string;
+  password: string;
+  studentCode: string;
+  fullName: string;
+}
+
+export interface ImportStudentPreviewItem {
+  row?: number;
+  action?: 'create' | 'enroll' | 'skip';
+  studentId?: string | null;
+  studentCode?: string;
+  code?: string;
+  fullName?: string;
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  birthday?: string;
+  classCode?: string;
+  className?: string;
+  class?: {
+    code?: string;
+    name?: string;
+  };
+  classId?: string;
+  username?: string;
+  password?: string;
+  note?: string;
+}
+
+export interface ImportErrorItem {
+  field?: string;
+  error?: string;
+}
+
 export interface ImportStudentsResult {
-  total: number;
-  success: number;
-  failed: number;
-  errors?: string[];
+  importToken?: string;
+  expiresAt?: string;
+  totalRows: number;
+  successCount: number;
+  skippedCount: number;
+  createdAccountCount: number;
+  createdAccounts: CreatedAccount[];
+  previewStudents?: ImportStudentPreviewItem[];
+  students?: ImportStudentPreviewItem[];
+  items?: ImportStudentPreviewItem[];
+  validRows?: ImportStudentPreviewItem[];
+  createdStudents?: ImportStudentPreviewItem[];
+  emailSentCount?: number;
+  emailFailedCount?: number;
+  emailErrors?: ImportErrorItem[];
+  failedCount: number;
+  errors: ImportErrorItem[];
+}
+
+export interface ConfirmImportPayload {
+  importToken: string;
+}
+
+export interface ImportFacultyItem {
+  id?: string;
+  row?: number;
+  action?: 'create' | 'skip';
+  code: string;
+  name: string;
+  note?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  deletedAt?: string | null;
+  majorCount?: number;
+  assignmentCount?: number;
+}
+
+export interface ImportFacultiesResult {
+  importToken?: string;
+  expiresAt?: string;
+  totalRows: number;
+  successCount: number;
+  previewCount?: number;
+  createdCount?: number;
+  previewFaculties?: ImportFacultyItem[];
+  createdFaculties?: ImportFacultyItem[];
+  failedCount: number;
+  errors: ImportErrorItem[];
+}
+
+export interface ImportMajorPreviewItem {
+  id?: string;
+  row?: number;
+  action?: 'create' | 'skip';
+  code: string;
+  name: string;
+  facultyId?: string;
+  facultyCode?: string;
+  facultyName?: string;
+  note?: string;
+  faculty?: {
+    id?: string;
+    code?: string;
+    name?: string;
+  };
+}
+
+export interface ImportMajorsResult {
+  importToken?: string;
+  expiresAt?: string;
+  totalRows: number;
+  successCount: number;
+  previewCount?: number;
+  createdCount?: number;
+  previewMajors?: ImportMajorPreviewItem[];
+  createdMajors?: ImportMajorPreviewItem[];
+  failedCount: number;
+  errors: ImportErrorItem[];
 }
 
 /** Thông tin phân công hội đồng. */

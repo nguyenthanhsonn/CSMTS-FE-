@@ -1,15 +1,34 @@
 import { useState, useEffect } from 'react';
 import { Save, Calendar, Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import type { User } from '../../types/common';
 import type { Class, Faculty, Major, Student } from '../../types';
 import { API_Student } from '../../api/API_Student';
+import { API_Auth } from '../../api/API_Auth';
 import { CustomSelect } from '../../components/common/CustomSelect';
 
+type ManagedClass = {
+  classId?: string;
+  classCode?: string;
+  className?: string;
+  enrollmentYear?: number;
+  studentCount?: number;
+  major?: { name?: string } | null;
+  faculty?: { name?: string } | null;
+};
+
+type ProfileUser = User & Partial<Omit<Student, 'role'>> & {
+  managedClasses?: ManagedClass[];
+};
+
 export const StudentProfile = () => {
-  const user = useAuthStore((state) => state.user) as Student;
+  const user = useAuthStore((state) => state.user) as ProfileUser | null;
   const updateProfile = useAuthStore((state) => state.updateProfile);
+  const logout = useAuthStore((state) => state.logout);
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
+  const isStudent = user?.role === 'student';
+  const managedClasses = user?.managedClasses ?? [];
 
   useEffect(() => {
     setMounted(true);
@@ -107,6 +126,12 @@ export const StudentProfile = () => {
 
   useEffect(() => {
     const loadFaculties = async () => {
+      if (!isStudent) {
+        setFacultiesList([]);
+        setMetadataError('');
+        return;
+      }
+
       try {
         setMetadataLoading(true);
         setMetadataError('');
@@ -123,11 +148,11 @@ export const StudentProfile = () => {
     };
 
     loadFaculties();
-  }, []);
+  }, [facultyId, isStudent]);
 
   useEffect(() => {
     const loadMajors = async () => {
-      if (!facultyId) {
+      if (!isStudent || !facultyId) {
         setMajorsList([]);
         return;
       }
@@ -145,11 +170,11 @@ export const StudentProfile = () => {
     };
 
     loadMajors();
-  }, [facultyId]);
+  }, [facultyId, isStudent, majorId]);
 
   useEffect(() => {
     const loadClasses = async () => {
-      if (!majorId) {
+      if (!isStudent || !majorId) {
         setClassesList([]);
         return;
       }
@@ -167,25 +192,36 @@ export const StudentProfile = () => {
     };
 
     loadClasses();
-  }, [majorId]);
+  }, [classId, isStudent, majorId]);
 
   useEffect(() => {
+    if (!isStudent) return;
     if (facultyId && majorsList.length > 0 && !majorsList.some(m => m.id === majorId)) {
       setMajorId(majorsList[0].id);
     }
-  }, [facultyId, majorsList, majorId]);
+  }, [facultyId, isStudent, majorsList, majorId]);
 
   useEffect(() => {
+    if (!isStudent) return;
     if (majorId && classesList.length > 0 && !classesList.some(c => c.id === classId)) {
       setClassId(classesList[0].id);
     }
-  }, [majorId, classesList, classId]);
+  }, [majorId, isStudent, classesList, classId]);
 
   const handleSave = async () => {
     setSaved(false);
     setErrorMsg('');
+    if (!fullName.trim()) {
+      setErrorMsg('Họ và tên không được để trống.');
+      return;
+    }
+
     try {
-      await updateProfile({ phone: phoneNumber });
+      await updateProfile({
+        fullName: fullName.trim(),
+        phone: phoneNumber.trim() || null,
+        dateOfBirth: dateOfBirth || null,
+      } as Partial<Student>);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: any) {
@@ -230,13 +266,15 @@ export const StudentProfile = () => {
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        const { API_Auth } = await import('../../api/API_Auth');
         await API_Auth.changePassword(accessToken, currentPassword, newPassword);
-        setPasswordSuccess('Đổi mật khẩu thành công!');
+        setPasswordSuccess('Đổi mật khẩu thành công. Vui lòng đăng nhập lại.');
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
-      }
+	        setTimeout(() => {
+	          logout();
+	        }, 1200);
+	      }
     } catch (err: any) {
       setPasswordError(err.message || 'Đã xảy ra lỗi khi đổi mật khẩu.');
     } finally {
@@ -253,8 +291,14 @@ export const StudentProfile = () => {
       {/* Header title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Thông tin cá nhân & Kỳ đánh giá</h1>
-          <p className="text-xs text-gray-500 mt-1">Cập nhật hồ sơ sinh viên và kiểm tra thông tin kỳ đánh giá hiện tại.</p>
+          <h1 className="text-xl font-bold text-gray-900">
+            {isStudent ? 'Thông tin cá nhân & Kỳ đánh giá' : 'Thông tin cá nhân'}
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            {isStudent
+              ? 'Cập nhật hồ sơ sinh viên và kiểm tra thông tin kỳ đánh giá hiện tại.'
+              : 'Cập nhật hồ sơ cá nhân và đổi mật khẩu tài khoản.'}
+          </p>
         </div>
       </div>
 
@@ -274,7 +318,7 @@ export const StudentProfile = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              Thông tin sinh viên
+              {isStudent ? 'Thông tin sinh viên' : 'Thông tin cá nhân'}
             </button>
             <button
               type="button"
@@ -293,12 +337,12 @@ export const StudentProfile = () => {
           {activeTab === 'profile' && (
             <div className="flex flex-col">
               <div className="p-5 space-y-4 flex-1">
-                {metadataLoading && (
+                {isStudent && metadataLoading && (
                   <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
                     Đang tải danh mục...
                   </div>
                 )}
-                {metadataError && (
+                {isStudent && metadataError && (
                   <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
                     {metadataError}
                   </div>
@@ -306,54 +350,64 @@ export const StudentProfile = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3.5">
                   
                   {/* Field: Năm trúng tuyển */}
-                  <CustomSelect
-                    value={admissionYear}
-                    onChange={(val) => setAdmissionYear(val)}
-                    options={admissionYears.map(year => ({ id: year, name: year }))}
-                    label="Năm trúng tuyển"
-                    required
-                  />
+                  {isStudent && (
+                    <CustomSelect
+                      value={admissionYear}
+                      onChange={(val) => setAdmissionYear(val)}
+                      options={admissionYears.map(year => ({ id: year, name: year }))}
+                      label="Năm trúng tuyển"
+                      required
+                    />
+                  )}
 
                   {/* Field: Khoa */}
-                  <CustomSelect
-                    value={facultyId}
-                    onChange={(val) => setFacultyId(val)}
-                    options={facultiesList}
-                    label="Khoa"
-                    required
-                  />
+                  {isStudent && (
+                    <CustomSelect
+                      value={facultyId}
+                      onChange={(val) => setFacultyId(val)}
+                      options={facultiesList}
+                      label="Khoa"
+                      required
+                    />
+                  )}
 
                   {/* Field: Ngành */}
-                  <CustomSelect
-                    value={majorId}
-                    onChange={(val) => setMajorId(val)}
-                    options={majorsList}
-                    label="Ngành/chuyên ngành"
-                    required
-                  />
+                  {isStudent && (
+                    <CustomSelect
+                      value={majorId}
+                      onChange={(val) => setMajorId(val)}
+                      options={majorsList}
+                      label="Ngành/chuyên ngành"
+                      required
+                    />
+                  )}
 
                   {/* Field: Lớp */}
-                  <CustomSelect
-                    value={classId}
-                    onChange={(val) => setClassId(val)}
-                    options={classesList}
-                    label="Lớp học"
-                    required
-                  />
+                  {isStudent && (
+                    <CustomSelect
+                      value={classId}
+                      onChange={(val) => setClassId(val)}
+                      options={classesList}
+                      label="Lớp học"
+                      required
+                    />
+                  )}
 
                   {/* Field: Mã sinh viên */}
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600 mb-1.5">
-                      Mã sinh viên <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={studentCode}
-                      onChange={(e) => setStudentCode(e.target.value)}
-                      className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-10 bg-white"
-                      placeholder="Nhập mã sinh viên"
-                    />
-                  </div>
+                  {isStudent && (
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                        Mã sinh viên <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={studentCode}
+                        onChange={(e) => setStudentCode(e.target.value)}
+                        className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-10 bg-white"
+                        placeholder="Nhập mã sinh viên"
+                      />
+                    </div>
+                  )}
 
                   {/* Field: Họ và tên */}
                   <div>
@@ -541,80 +595,102 @@ export const StudentProfile = () => {
 
         </div>
 
-        {/* Right Side: Kỳ đánh giá & Quy chế (spans 1 col) */}
+        {/* Right Side: Context card */}
         <div className="space-y-5">
           
           {/* Card: Kỳ đánh giá */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <h2 className="text-sm sm:text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Calendar size={20} className="text-blue-600" />
-              Kỳ đánh giá hiện tại
-            </h2>
+          {isStudent ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <h2 className="text-sm sm:text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Calendar size={20} className="text-blue-600" />
+                Kỳ đánh giá hiện tại
+              </h2>
 
-            <div className="space-y-4">
-              
-              {/* Field: Học kỳ */}
-              <CustomSelect
-                value={semester}
-                onChange={(val) => setSemester(val as 'HK1' | 'HK2')}
-                options={[
-                  { id: 'HK1', name: 'Học kỳ I' },
-                  { id: 'HK2', name: 'Học kỳ II' }
-                ]}
-                label="Học kỳ"
-                required
-              />
+              <div className="space-y-4">
+                
+                {/* Field: Học kỳ */}
+                <CustomSelect
+                  value={semester}
+                  onChange={(val) => setSemester(val as 'HK1' | 'HK2')}
+                  options={[
+                    { id: 'HK1', name: 'Học kỳ I' },
+                    { id: 'HK2', name: 'Học kỳ II' }
+                  ]}
+                  label="Học kỳ"
+                  required
+                />
 
-              {/* Field: Năm học */}
-              <CustomSelect
-                value={academicYear}
-                onChange={(val) => setAcademicYear(val)}
-                options={academicYears.map(year => ({ id: year, name: year }))}
-                label="Năm học"
-                required
-              />
+                {/* Field: Năm học */}
+                <CustomSelect
+                  value={academicYear}
+                  onChange={(val) => setAcademicYear(val)}
+                  options={academicYears.map(year => ({ id: year, name: year }))}
+                  label="Năm học"
+                  required
+                />
 
-              <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl space-y-2">
-                <div className="flex justify-between text-[11px] sm:text-xs">
-                  <span className="text-gray-500">Kỳ học:</span>
-                  <span className="font-bold text-blue-900">{semester === 'HK1' ? 'Học kỳ I' : 'Học kỳ II'}</span>
-                </div>
-                <div className="flex justify-between text-[11px] sm:text-xs">
-                  <span className="text-gray-500">Năm học:</span>
-                  <span className="font-bold text-blue-900">{academicYear}</span>
-                </div>
-                <div className="flex justify-between text-[11px] sm:text-xs">
-                  <span className="text-gray-500">Trạng thái:</span>
-                  <span className="font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">Chưa nộp</span>
-                </div>
-                <div className="flex justify-between text-[11px] sm:text-xs border-t border-blue-100/50 pt-2">
-                  <span className="text-gray-500">Hạn nộp:</span>
-                  <span className="font-semibold text-red-600">31/12/{academicYear.split('-')[0]}</span>
+                <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl space-y-2">
+                  <div className="flex justify-between text-[11px] sm:text-xs">
+                    <span className="text-gray-500">Kỳ học:</span>
+                    <span className="font-bold text-blue-900">{semester === 'HK1' ? 'Học kỳ I' : 'Học kỳ II'}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] sm:text-xs">
+                    <span className="text-gray-500">Năm học:</span>
+                    <span className="font-bold text-blue-900">{academicYear}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] sm:text-xs">
+                    <span className="text-gray-500">Trạng thái:</span>
+                    <span className="font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">Chưa nộp</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] sm:text-xs border-t border-blue-100/50 pt-2">
+                    <span className="text-gray-500">Hạn nộp:</span>
+                    <span className="font-semibold text-red-600">31/12/{academicYear.split('-')[0]}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <h2 className="text-sm sm:text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Calendar size={20} className="text-blue-600" />
+                Lớp phụ trách
+              </h2>
 
-          {/* Card: Quy chế / Lưu ý */}
-          <div className="bg-amber-50/50 rounded-xl border border-amber-200/60 p-5">
-            <h3 className="text-xs sm:text-sm font-bold text-amber-900 mb-3 flex items-center gap-1.5">
-              <span>⚠️</span> Lưu ý điền phiếu:
-            </h3>
-            <ul className="text-[11px] text-amber-800 space-y-2 leading-relaxed">
-              <li className="flex items-start gap-1">
-                <span className="text-amber-500 shrink-0">•</span>
-                <span>Các trường có dấu <span className="text-red-500 font-bold">*</span> là bắt buộc.</span>
-              </li>
-              <li className="flex items-start gap-1">
-                <span className="text-amber-500 shrink-0">•</span>
-                <span>Họ tên, Ngày sinh: Hệ thống tự điền theo Mã SV.</span>
-              </li>
-              <li className="flex items-start gap-1">
-                <span className="text-amber-500 shrink-0">•</span>
-                <span>Vui lòng kiểm tra kỹ tất cả thông tin trước khi lưu.</span>
-              </li>
-            </ul>
-          </div>
+              {managedClasses.length > 0 ? (
+                <div className="space-y-3">
+                  {managedClasses.map((item) => (
+                    <div
+                      key={item.classId ?? item.classCode ?? item.className}
+                      className="rounded-xl border border-blue-100 bg-blue-50/70 p-3"
+                    >
+                      <p className="text-sm font-bold text-gray-900">{item.className || item.classCode || 'Lớp phụ trách'}</p>
+                      <p className="mt-1 text-xs font-semibold text-gray-600">{item.classCode || 'Chưa có mã lớp'}</p>
+                      <div className="mt-3 space-y-1.5 text-xs text-gray-600">
+                        <div className="flex justify-between gap-3">
+                          <span>Ngành</span>
+                          <span className="text-right font-semibold text-gray-800">{item.major?.name || '—'}</span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span>Khoa</span>
+                          <span className="text-right font-semibold text-gray-800">{item.faculty?.name || '—'}</span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span>Sinh viên</span>
+                          <span className="font-semibold text-gray-800">{item.studentCount ?? 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-xs font-semibold text-gray-600">
+                  Tài khoản này chưa được phân công lớp phụ trách.
+                </p>
+              )}
+            </div>
+          )}
+
+
 
         </div>
       </div>

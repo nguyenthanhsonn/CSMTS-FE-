@@ -3,47 +3,170 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import { API_Admin } from '@/api/API_Admin';
 import ClassReviewFilterBar, { type ReviewStatusFilter } from '@/components/class_council/ClassReviewFilterBar';
 import ClassStatsWidget from '@/components/class_council/ClassStatsWidget';
-import StudentReviewTable, { type CouncilStudentReview } from '@/components/class_council/StudentReviewTable';
-
-const mockClassNames: Record<string, string> = {
-  cntt01: 'Lớp CNTT01',
-  cntt02: 'Lớp CNTT02',
-};
-
-const mockStudents: Record<string, CouncilStudentReview[]> = {
-  cntt01: [
-    { id: 'sv001', code: '2251120001', fullName: 'Nguyễn An Bình', selfScore: 82, status: 'pending' },
-    { id: 'sv002', code: '2251120002', fullName: 'Trần Minh Châu', selfScore: 88, status: 'approved' },
-    { id: 'sv003', code: '2251120003', fullName: 'Lê Quốc Duy', selfScore: null, status: 'not_submitted' },
-    { id: 'sv004', code: '2251120004', fullName: 'Phạm Hoàng Gia Hân', selfScore: 76, status: 'returned' },
-    { id: 'sv005', code: '2251120005', fullName: 'Võ Nhật Khang', selfScore: 91, status: 'pending' },
-  ],
-  cntt02: [
-    { id: 'sv101', code: '2251120101', fullName: 'Đỗ Thanh Mai', selfScore: 84, status: 'approved' },
-    { id: 'sv102', code: '2251120102', fullName: 'Bùi Gia Phúc', selfScore: null, status: 'not_submitted' },
-  ],
-};
+import StudentReviewTable, { type CouncilStudentReview, type StudentReviewStatus } from '@/components/class_council/StudentReviewTable';
+import { useToast } from '@/components/common/ToastProvider';
+import { useAuthStore } from '@/store/authStore';
 
 const getParam = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value ?? '');
+
+function toArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) {
+    return value as T[];
+  }
+
+  if (value && typeof value === 'object' && Array.isArray((value as { items?: unknown }).items)) {
+    return (value as { items: T[] }).items;
+  }
+
+  return [];
+}
+
+function toReviewStatus(status?: string): StudentReviewStatus {
+  const normalized = String(status || '').toLowerCase();
+
+  if (normalized === 'submitted') {
+    return 'submitted';
+  }
+
+  return 'not_submitted';
+}
+
+function normalizeKey(value: unknown) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getStudentIdentityKeys(student: any) {
+  return [
+    student.studentId,
+    student.id,
+    student.userId,
+    student.user?.id,
+    student.email,
+    student.user?.email,
+    student.studentCode,
+    student.code,
+    student.fullName,
+    student.name,
+    student.user?.fullName,
+  ]
+    .map(normalizeKey)
+    .filter(Boolean);
+}
+
+function getEvaluationIdentityKeys(evaluation: any) {
+  return [
+    evaluation.studentId,
+    evaluation.student?.id,
+    evaluation.student?.userId,
+    evaluation.userId,
+    evaluation.student?.email,
+    evaluation.email,
+    evaluation.studentCode,
+    evaluation.student?.studentCode,
+    evaluation.studentName,
+    evaluation.student?.fullName,
+  ]
+    .map(normalizeKey)
+    .filter(Boolean);
+}
 
 export function StudentListView() {
   const router = useRouter();
   const params = useParams();
+  const toast = useToast();
+  const user = useAuthStore((state) => state.user);
   const classId = getParam(params.classId);
   const [loading, setLoading] = useState(true);
+  const [className, setClassName] = useState('Lớp phụ trách');
+  const [students, setStudents] = useState<CouncilStudentReview[]>([]);
   const [semester, setSemester] = useState('2025-2026-hk1');
   const [status, setStatus] = useState<ReviewStatusFilter>('all');
   const [keyword, setKeyword] = useState('');
 
   useEffect(() => {
-    // TODO: nối API lấy danh sách sinh viên và trạng thái phiếu theo lớp/học kỳ.
-    const timer = window.setTimeout(() => setLoading(false), 250);
-    return () => window.clearTimeout(timer);
-  }, [classId, semester]);
+    let mounted = true;
+    const fallbackClass = user?.managedClasses?.find((item) => (item.classId || item.id) === classId);
+    setClassName(fallbackClass?.className || fallbackClass?.name || fallbackClass?.classCode || fallbackClass?.code || 'Lớp phụ trách');
 
-  const students = mockStudents[classId] ?? [];
+    const loadStudents = async () => {
+      if (!classId) {
+        setStudents([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const studentsResult = await API_Admin.getClassStudents(classId);
+
+        if (!mounted) {
+          return;
+        }
+
+        const classStudents = toArray<any>(studentsResult);
+        const evaluationsResult = await API_Admin.getAdminEvaluationList({
+          classId,
+          page: 1,
+          limit: Math.max(classStudents.length, 20),
+        });
+
+        if (!mounted) {
+          return;
+        }
+
+        const evaluations = toArray<any>(evaluationsResult);
+        const firstEvaluation = evaluations[0];
+        if (firstEvaluation?.class?.name || firstEvaluation?.class?.code) {
+          setClassName(firstEvaluation.class.name || firstEvaluation.class.code);
+        }
+        const evaluationsByKey = new Map<string, any>();
+
+        evaluations.forEach((evaluation) => {
+          getEvaluationIdentityKeys(evaluation).forEach((key) => {
+            evaluationsByKey.set(key, evaluation);
+          });
+        });
+
+        const mappedStudents = classStudents.map((student) => {
+          const studentId = student.studentId || student.id || student.userId || '';
+          const evaluation = getStudentIdentityKeys(student)
+            .map((key) => evaluationsByKey.get(key))
+            .find(Boolean);
+          const totalScore = evaluation?.totalScore ?? evaluation?.studentScore ?? evaluation?.selfScore ?? null;
+
+          return {
+            id: evaluation?.id || studentId,
+            code: student.studentCode || student.code || '-',
+            fullName: student.fullName || student.name || student.user?.fullName || 'Sinh viên',
+            selfScore: typeof totalScore === 'number' ? totalScore : null,
+            status: evaluation ? toReviewStatus(evaluation.status) : 'not_submitted',
+          } satisfies CouncilStudentReview;
+        });
+
+        setStudents(mappedStudents);
+      } catch (error: any) {
+        if (!mounted) {
+          return;
+        }
+        setStudents([]);
+        toast.error(error?.message || 'Không tải được danh sách sinh viên của lớp.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadStudents();
+
+    return () => {
+      mounted = false;
+    };
+  }, [classId, semester, toast, user?.managedClasses]);
+
   const filteredStudents = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
     return students.filter((student) => {
@@ -56,10 +179,10 @@ export function StudentListView() {
     });
   }, [students, status, keyword]);
 
-  const submitted = students.filter((student) => student.selfScore !== null).length;
-  const approved = students.filter((student) => student.status === 'approved').length;
+  const submitted = students.filter((student) => student.status === 'submitted').length;
+  const approved = 0;
   const notSubmitted = students.filter((student) => student.status === 'not_submitted').length;
-  const hasPending = students.some((student) => student.status === 'pending');
+  const hasNotSubmitted = students.some((student) => student.status === 'not_submitted');
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 p-4 sm:p-6">
@@ -73,17 +196,17 @@ export function StudentListView() {
             <ArrowLeft size={16} />
             Quay lại danh sách lớp
           </button>
-          <h1 className="ui-page-title">{mockClassNames[classId] ?? 'Lớp phụ trách'}</h1>
+          <h1 className="ui-page-title">{className}</h1>
           <p className="mt-1 text-sm text-[#868E96]">Danh sách sinh viên và trạng thái nộp phiếu.</p>
         </div>
         <button
           type="button"
-          disabled={hasPending || students.length === 0}
-          title={hasPending ? 'Còn sinh viên ở trạng thái Chờ duyệt chưa xử lý xong.' : undefined}
+          disabled={hasNotSubmitted || students.length === 0}
+          title={hasNotSubmitted ? 'Còn sinh viên chưa nộp phiếu đánh giá.' : undefined}
           className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#3B5BDB] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4C6EF5] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Send size={16} />
-          Gửi cả lớp lên Khoa
+          Gửi cả lớp lên Admin
         </button>
       </div>
 

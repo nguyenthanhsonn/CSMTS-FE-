@@ -5,41 +5,38 @@ import { usePathname } from 'next/navigation';
 import {
   Home,
   FileText,
-  Upload,
   History,
   Award,
   Users,
+  User,
   Building2,
   GraduationCap,
-  School,
-  UserCog,
-  BarChart3,
-  FileSpreadsheet,
-  ClipboardCheck,
   X,
+  Compass,
+  CalendarDays,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 const studentMenuItems = [
-  { path: '/student', icon: Home, label: 'Trang chủ' },
   { path: '/student/evaluation', icon: FileText, label: 'Phiếu đánh giá' },
-  { path: '/student/evidence', icon: Upload, label: 'Quản lý minh chứng' },
   { path: '/student/history', icon: History, label: 'Lịch sử đánh giá' },
   { path: '/student/results', icon: Award, label: 'Kết quả' },
 ];
 
 const adminMenuItems = [
-  { path: '/admin', icon: BarChart3, label: 'Dashboard' },
-  { path: '/admin/student', icon: UserCog, label: 'Quản lý sinh viên' },
+  { path: '/admin', icon: Home, label: 'Dashboard' },
+  { path: '/admin/student', icon: Users, label: 'Quản lý người dùng' },
   { path: '/admin/faculties', icon: Building2, label: 'Quản lý Khoa' },
-  { path: '/admin/majors', icon: GraduationCap, label: 'Quản lý Ngành' },
-  { path: '/admin/classes', icon: School, label: 'Quản lý Lớp' },
-  { path: '/admin/class-list', icon: Users, label: 'Danh sách lớp' },
-  { path: '/admin/import', icon: FileSpreadsheet, label: 'Import danh sách' },
+  { path: '/admin/majors', icon: Compass, label: 'Quản lý Ngành' },
+  { path: '/admin/classes', icon: GraduationCap, label: 'Quản lý Lớp' },
+  { path: '/admin/semesters', icon: CalendarDays, label: 'Quản lý Học kỳ' },
+  { path: '/admin/evaluations', icon: ClipboardCheck, label: 'Duyệt đánh giá rèn luyện' },
 ];
 
 const classCouncilMenuItems = [
-  { path: '/class_council', icon: ClipboardCheck, label: 'Duyệt điểm rèn luyện' },
+  { path: '/class_council', icon: Users, label: 'Lớp phụ trách' },
+  { path: '/class_council/profile', icon: User, label: 'Thông tin cá nhân' },
 ];
 
 interface SidebarProps {
@@ -51,24 +48,21 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
   const pathname = usePathname();
   const { user } = useAuthStore();
 
-  const menuItems =
-    user?.role === 'admin'
-      ? adminMenuItems
-      : user?.role === 'class_council'
-        ? classCouncilMenuItems
-        : studentMenuItems;
-  const sectionLabel =
-    user?.role === 'admin'
-      ? 'QUẢN TRỊ'
-      : user?.role === 'class_council'
-        ? 'CỐ VẤN LỚP'
-        : 'SINH VIÊN';
-  const homePath =
-    user?.role === 'admin'
-      ? '/admin'
-      : user?.role === 'class_council'
-        ? '/class_council'
-        : '/student';
+  const menuItems = user?.role === 'admin'
+    ? adminMenuItems
+    : user?.role === 'class_council'
+    ? classCouncilMenuItems
+    : studentMenuItems;
+  const sectionLabel = user?.role === 'admin'
+    ? 'QUẢN TRỊ'
+    : user?.role === 'class_council'
+    ? 'HỘI ĐỒNG LỚP'
+    : 'SINH VIÊN';
+  const homePath = user?.role === 'admin'
+    ? '/admin'
+    : user?.role === 'class_council'
+    ? '/class_council'
+    : '/student';
 
   return (
     <>
@@ -83,7 +77,7 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[220px] flex-col bg-[#1A1B2E] shadow-2xl transition-transform duration-200 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 flex w-[220px] flex-col bg-[#104E92] shadow-2xl transition-transform duration-200 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         {/* Logo header */}
@@ -94,19 +88,19 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
             onClick={onClose}
           >
             {/* Logo mark */}
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#3B5BDB] to-[#6741D9] shadow-lg">
-              <span className="text-xs font-black text-white">RL</span>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-lg">
+              <span className="text-xs font-black text-[#104E92]">RL</span>
             </div>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-bold leading-tight text-white">Đánh giá Rèn luyện</p>
-              <p className="text-[10px] font-medium text-[#A0AEC0]">CSMTS</p>
+              <p className="text-[10px] font-medium text-[#D0E2FF]">CSMTS</p>
             </div>
           </Link>
           <button
             type="button"
             aria-label="Đóng menu"
             onClick={onClose}
-            className="ui-icon-button cursor-pointer text-[#A0AEC0] hover:bg-white/10 hover:text-white lg:hidden"
+            className="ui-icon-button cursor-pointer text-[#D0E2FF] hover:bg-white/10 hover:text-white lg:hidden"
           >
             <X size={18} />
           </button>
@@ -115,7 +109,7 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {/* Section label */}
-          <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-[#4A5568]">
+          <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-[#D0E2FF]/60">
             {sectionLabel}
           </p>
 
@@ -130,17 +124,13 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
                   href={item.path}
                   onClick={onClose}
                   className={`group relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${isActive
-                      ? 'bg-[#3B5BDB] text-white shadow-md shadow-[#3B5BDB]/40'
-                      : 'text-[#A0AEC0] hover:bg-white/8 hover:text-white'
+                    ? 'bg-[#0B346E] text-white shadow-sm'
+                    : 'text-[#D0E2FF] hover:bg-white/8 hover:text-white'
                     }`}
                 >
-                  {/* Active indicator bar */}
-                  {isActive && (
-                    <span className="absolute right-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-l-full bg-white/60" />
-                  )}
                   <Icon
                     size={17}
-                    className={`shrink-0 transition-transform duration-150 ${isActive ? 'text-white' : 'text-[#718096] group-hover:text-white'
+                    className={`shrink-0 transition-transform duration-150 ${isActive ? 'text-white' : 'text-[#D0E2FF]/70 group-hover:text-white'
                       }`}
                   />
                   <span className="truncate">{item.label}</span>

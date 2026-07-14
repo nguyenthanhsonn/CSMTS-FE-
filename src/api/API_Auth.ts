@@ -1,4 +1,4 @@
-import { get, post } from './api';
+import { get, patch, post } from './api';
 
 import type {
   CaptchaResponse,
@@ -11,12 +11,17 @@ import type {
 
 /** Lấy mã xác nhận khi đăng nhập. */
 async function getCaptcha() {
-  return get<CaptchaResponse>('/auth/captcha');
+  return get<CaptchaResponse>('/auth/captcha', { skipAuth: true, skipAuthRefresh: true } as any);
 }
 
 /** Đăng nhập tài khoản. */
-async function login(email: string, password: string) {
-  return post<LoginResponse>('/auth/login', { email, password } satisfies LoginPayload);
+async function login(username: string, password: string, captchaId: string, captchaCode: string) {
+  return post<LoginResponse>('/auth/login', {
+    username,
+    password,
+    captchaId,
+    captchaCode,
+  } satisfies LoginPayload, { skipAuth: true, skipAuthRefresh: true } as any);
 }
 
 /** Lấy thông tin tài khoản hiện tại. */
@@ -31,17 +36,29 @@ async function refreshToken(refreshToken: string) {
 
 /** Đăng xuất tài khoản. */
 async function logout(refreshToken: string, _accessToken?: string) {
-  return post<null>('/auth/logout', { refreshToken });
+  void _accessToken;
+  return post<null>('/auth/logout', { refreshToken }, { skipAuthRefresh: true } as any);
 }
 
 /** Đổi mật khẩu tài khoản. */
 async function changePassword(_accessToken: string, currentPassword: string, newPassword: string) {
-  return post<null>('/auth/change-password', { currentPassword, newPassword } satisfies ChangePasswordPayload);
+  void _accessToken;
+  return patch<{ passwordChanged: boolean; requiresLogin: boolean }>('/profile/password', {
+    currentPassword,
+    newPassword,
+  } satisfies ChangePasswordPayload);
 }
 
 /** Lấy thông tin tài khoản cho màn cũ. */
 async function getProfile(_accessToken?: string) {
-  return getMe();
+  void _accessToken;
+  return get<User>('/profile');
+}
+
+/** Cập nhật thông tin cá nhân dùng chung cho mọi vai trò. */
+async function updateProfile(_accessTokenOrPayload: string | Record<string, unknown>, payload?: Record<string, unknown>) {
+  const data = typeof _accessTokenOrPayload === 'string' ? payload : _accessTokenOrPayload;
+  return patch<User>('/profile', data);
 }
 
 export const API_Auth = {
@@ -49,6 +66,7 @@ export const API_Auth = {
   login,
   getMe,
   getProfile,
+  updateProfile,
   refreshToken,
   logout,
   changePassword,

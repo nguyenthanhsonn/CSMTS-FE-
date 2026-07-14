@@ -5,20 +5,30 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../store/authStore';
 
 export default function RootPage() {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, isHydrated, hydrateAuth, user } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    hydrateAuth();
+  }, [hydrateAuth]);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
     if (!isAuthenticated) {
       router.replace('/login');
     } else {
       if (user?.role === 'admin') {
         router.replace('/admin');
+      } else if (user?.role === 'class_council') {
+        router.replace('/class_council');
       } else {
         router.replace('/student');
       }
     }
-  }, [isAuthenticated, user, router]);
+  }, [isHydrated, isAuthenticated, user, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

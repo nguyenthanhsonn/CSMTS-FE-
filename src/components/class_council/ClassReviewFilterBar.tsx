@@ -3,7 +3,7 @@
 import { Search } from 'lucide-react';
 import CustomSelect from '../common/CustomSelect';
 
-export type ReviewStatusFilter = 'all' | 'not_submitted' | 'pending' | 'approved' | 'returned';
+export type ReviewStatusFilter = 'all' | 'not_submitted' | 'submitted';
 
 interface ClassReviewFilterBarProps {
   semester: string;
@@ -22,10 +22,8 @@ const semesterOptions = [
 
 const statusOptions = [
   { id: 'all', name: 'Tất cả' },
+  { id: 'submitted', name: 'Đã nộp' },
   { id: 'not_submitted', name: 'Chưa nộp' },
-  { id: 'pending', name: 'Chờ duyệt' },
-  { id: 'approved', name: 'Đã duyệt' },
-  { id: 'returned', name: 'Trả về' },
 ];
 
 export default function ClassReviewFilterBar({
@@ -38,7 +36,7 @@ export default function ClassReviewFilterBar({
 }: ClassReviewFilterBarProps) {
   return (
     <div className="ui-card p-4">
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[220px_220px_1fr]">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[220px_220px_1fr]">
         <CustomSelect
           label="Học kỳ"
           value={semester}

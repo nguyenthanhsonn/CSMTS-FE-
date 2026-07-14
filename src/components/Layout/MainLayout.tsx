@@ -16,7 +16,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex min-h-screen flex-col lg:pl-[220px]">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 flex flex-col bg-[#F8F9FA]">
+        <main className="flex-1 flex flex-col bg-[#F8F9FA] overflow-x-hidden max-w-full">
           {children}
         </main>
         {/* Minimal footer */}

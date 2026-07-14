@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, ChangeEvent } from 'react';
+import { useCallback, useEffect, useState, ChangeEvent } from 'react';
 import { EvidenceFile } from '../../types';
 import { EvidenceGuidelines } from '../../components/student/EvidenceGuidelines';
 import { EvidenceGroupCard } from '../../components/student/EvidenceGroupCard';
@@ -13,17 +13,17 @@ export const StudentEvidence = () => {
   const [uploadingGroup, setUploadingGroup] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const mapEvidence = (item: any): EvidenceFile => ({
-    id: item.id,
-    fileName: item.fileName || item.title || item.publicId || 'Minh chứng',
-    fileType: item.fileType || item.mimeType || 'application/octet-stream',
-    fileSize: item.fileSize || item.size || 0,
-    criteriaId: item.criteriaId || item.criteriaCode || 'academic',
-    uploadDate: item.uploadDate || item.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
-    aiVerification: item.aiVerification || 'manual_review',
-  });
+	  const mapEvidence = (item: any): EvidenceFile => ({
+	    id: item.id,
+	    fileName: item.fileName || item.title || item.publicId || 'Minh chứng',
+	    fileType: item.fileType || item.mimeType || 'application/octet-stream',
+	    fileSize: item.fileSize || item.size || 0,
+	    criteriaId: item.criteriaId || item.criteriaCode || 'TC1',
+	    uploadDate: item.uploadDate || item.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+	    aiVerification: item.aiVerification || 'manual_review',
+	  });
 
-  const loadEvidences = async () => {
+  const loadEvidences = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -34,11 +34,11 @@ export const StudentEvidence = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadEvidences();
-  }, []);
+  }, [loadEvidences]);
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>, criteriaId: string) => {
     const files = e.target.files;
@@ -57,15 +57,14 @@ export const StudentEvidence = () => {
       setUploadingGroup(criteriaId);
       setError(null);
 
-      for (const file of fileList) {
-        const { secureUrl, publicId } = await uploadEvidenceFile(file);
-        await API_Student.linkEvidenceUrl({
-          criteriaCode: criteriaId,
-          imageUrl: secureUrl,
-          publicId,
-          title: file.name,
-        });
-      }
+	      for (const file of fileList) {
+	        const { secureUrl, publicId } = await uploadEvidenceFile(file);
+	        await API_Student.linkEvidenceUrl({
+	          criteriaCode: criteriaId,
+	          imageUrl: secureUrl,
+	          publicId,
+	        });
+	      }
 
       await loadEvidences();
     } catch (err: any) {
@@ -94,13 +93,13 @@ export const StudentEvidence = () => {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const criteriaGroups = [
-    { id: 'academic', name: 'Học tập và nghiên cứu khoa học' },
-    { id: 'political', name: 'Hoạt động chính trị - xã hội' },
-    { id: 'club', name: 'Câu lạc bộ, đội nhóm' },
-    { id: 'charity', name: 'Hoạt động từ thiện, tình nguyện' },
-    { id: 'leadership', name: 'Vai trò cán bộ' },
-  ];
+	  const criteriaGroups = [
+	    { id: 'TC1', name: 'Ý thức tham gia học tập' },
+	    { id: 'TC2', name: 'Ý thức chấp hành nội quy, quy chế' },
+	    { id: 'TC3', name: 'Hoạt động chính trị - xã hội' },
+	    { id: 'TC4', name: 'Ý thức công dân trong quan hệ cộng đồng' },
+	    { id: 'TC5', name: 'Vai trò, trách nhiệm trong tập thể' },
+	  ];
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-6">

@@ -7,11 +7,16 @@ import type {
   AdminEvaluationListQuery,
   AdminFaculty,
   AdminMajor,
+  AdminSemester,
   AdminUser,
-  AssignCouncilPayload,
+  ConfirmImportPayload,
+  CreateStudentPayload,
   CreateUserPayload,
+  FinalizeEvaluationPayload,
   FacultyPayload,
+  ImportFacultiesResult,
   ImportStudentsPayload,
+  ImportMajorsResult,
   ImportStudentsResult,
   MajorPayload,
   PaginatedResponse,
@@ -22,6 +27,8 @@ import type {
   ReportsOverview,
   ReviewEvaluationPayload,
   ReviewScoresPayload,
+  SemesterPayload,
+  SemesterQuery,
   StatusPayload,
   TrainingResultsReport,
   UserListQuery,
@@ -29,24 +36,86 @@ import type {
 
 /** Tạo tài khoản người dùng. */
 async function createUser(_accessTokenOrPayload: string | CreateUserPayload, payload?: CreateUserPayload) {
-  return post<AdminUser>('/users', payload || _accessTokenOrPayload);
+  return post<AdminUser>('/admin/users', payload || _accessTokenOrPayload);
+}
+
+/** Tạo sinh viên thủ công. */
+async function createStudent(payload: CreateStudentPayload) {
+  return post<AdminUser>('/admin/students', payload);
 }
 
 /** Lấy danh sách người dùng. */
 async function getUsers(_accessTokenOrQuery?: string | UserListQuery, query?: UserListQuery) {
-  return get<PaginatedResponse<AdminUser> | AdminUser[]>('/users', {
+  return get<PaginatedResponse<AdminUser> | AdminUser[]>('/admin/users', {
     params: buildQueryParams(query || (typeof _accessTokenOrQuery === 'object' ? _accessTokenOrQuery : undefined)),
   });
 }
 
 /** Lấy thông tin người dùng. */
 async function getUserById(_accessTokenOrId: string, id?: string) {
-  return get<AdminUser>(`/users/${id || _accessTokenOrId}`);
+  return get<AdminUser>(`/admin/users/${id || _accessTokenOrId}`);
+}
+
+/** Xóa tài khoản admin/cố vấn. */
+async function deleteUser(id: string) {
+  return del<null>(`/admin/users/${id}`);
+}
+
+/** Cập nhật trạng thái tài khoản admin/cố vấn. */
+async function updateUserStatus(id: string, payload: StatusPayload) {
+  return patch<AdminUser>(`/admin/users/${id}/status`, payload);
+}
+
+/** Xóa tài khoản sinh viên. */
+async function deleteStudent(id: string) {
+  return del<null>(`/admin/students/${id}`);
+}
+
+/** Cập nhật trạng thái tài khoản sinh viên. */
+async function updateStudentStatus(id: string, payload: StatusPayload) {
+  return patch<AdminUser>(`/admin/students/${id}/status`, payload);
 }
 
 /** Lấy danh sách phiếu đánh giá. */
 async function getAdminEvaluationList(query?: AdminEvaluationListQuery) {
   return get<PaginatedResponse<AdminEvaluationItem>>('/training-evaluations', { params: buildQueryParams(query) });
+}
+
+/** Lấy danh sách phiếu đánh giá cho admin duyệt cuối. */
+async function getAdminEvaluations(query?: AdminEvaluationListQuery) {
+  return get<PaginatedResponse<AdminEvaluationItem> | AdminEvaluationItem[]>('/admin/training-evaluations', {
+    params: buildQueryParams(query),
+  });
+}
+
+/** Lấy chi tiết phiếu đánh giá bằng route chung cho các vai trò. */
+async function getEvaluationDetail(id: string) {
+  return get<AdminEvaluationItem>(`/training-evaluations/${id}`);
+}
+
+/** Lấy danh sách học kỳ. */
+async function getSemesters(query?: SemesterQuery) {
+  return get<PaginatedResponse<AdminSemester> | AdminSemester[]>('/admin/semesters', { params: buildQueryParams(query) });
+}
+
+/** Lấy chi tiết học kỳ. */
+async function getSemesterById(id: string) {
+  return get<AdminSemester>(`/admin/semesters/${id}`);
+}
+
+/** Tạo học kỳ. */
+async function createSemester(payload: SemesterPayload) {
+  return post<AdminSemester>('/admin/semesters', payload);
+}
+
+/** Cập nhật học kỳ. */
+async function updateSemester(id: string, payload: SemesterPayload) {
+  return patch<AdminSemester>(`/admin/semesters/${id}`, payload);
+}
+
+/** Bật/tắt học kỳ. */
+async function toggleSemesterActive(id: string, payload: StatusPayload) {
+  return patch<AdminSemester>(`/admin/semesters/${id}/toggle-active`, payload);
 }
 
 /** Mở lại phiếu đánh giá. */
@@ -56,12 +125,17 @@ async function reopenEvaluation(id: string, payload?: ReopenEvaluationPayload) {
 
 /** Ghi nhận điểm hội đồng lớp. */
 async function reviewScoresByClassCouncil(id: string, payload: ReviewScoresPayload) {
-  return patch<AdminEvaluationItem>(`/training-evaluations/${id}/class-council-review`, payload);
+  return patch<AdminEvaluationItem>(`/training-evaluations/${id}/review-scores`, payload);
 }
 
 /** Duyệt hoặc từ chối phiếu đánh giá. */
 async function reviewEvaluation(id: string, payload: ReviewEvaluationPayload) {
   return post<AdminEvaluationItem>(`/training-evaluations/${id}/review`, payload);
+}
+
+/** Admin phê duyệt cuối phiếu đánh giá. */
+async function finalizeEvaluation(id: string, payload: FinalizeEvaluationPayload = {}) {
+  return patch<AdminEvaluationItem>(`/admin/training-evaluations/${id}/finalize`, payload);
 }
 
 /** Lấy danh sách khoa. */
@@ -94,6 +168,29 @@ async function deleteFaculty(id: string) {
   return del<null>(`/admin/faculties/${id}`);
 }
 
+/** Tải file mẫu nhập khoa. */
+async function downloadFacultyImportTemplate() {
+  const res = await axiosInstance.get<Blob>('/admin/faculties/import-template', {
+    responseType: 'blob',
+  });
+  return res.data;
+}
+
+/** Nhập danh sách khoa từ Excel. */
+async function importFaculties(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return post<ImportFacultiesResult>('/admin/faculties/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+}
+
+/** Xác nhận nhập khoa sau preview nếu backend trả importToken. */
+async function confirmImportFaculties(payload: ConfirmImportPayload) {
+  return post<ImportFacultiesResult>('/admin/faculties/import/confirm', payload);
+}
+
 /** Lấy danh sách ngành. */
 async function getMajors() {
   return get<AdminMajor[]>('/admin/majors');
@@ -124,9 +221,45 @@ async function deleteMajor(id: string) {
   return del<null>(`/admin/majors/${id}`);
 }
 
+/** Tải file mẫu nhập ngành. */
+async function downloadMajorImportTemplate() {
+  const res = await axiosInstance.get<Blob>('/admin/majors/import-template', {
+    responseType: 'blob',
+  });
+  return res.data;
+}
+
+/** Preview nhập danh sách ngành từ Excel. */
+async function importMajors(file: File, facultyId?: string) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (facultyId) {
+    formData.append('facultyId', facultyId);
+  }
+
+  return post<ImportMajorsResult>('/admin/majors/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+}
+
+/** Xác nhận nhập ngành sau preview. */
+async function confirmImportMajors(payload: ConfirmImportPayload) {
+  return post<ImportMajorsResult>('/admin/majors/import/confirm', payload);
+}
+
 /** Lấy danh sách lớp. */
 async function getClasses() {
   return get<AdminClass[]>('/admin/classes');
+}
+
+/** Lấy chi tiết lớp. */
+async function getClassById(id: string) {
+  return get<AdminClass>(`/admin/classes/${id}`);
+}
+
+/** Cập nhật danh sách cố vấn phụ trách lớp. */
+async function updateClassCouncils(classId: string, payload: { userIds: string[] }) {
+  return patch<AdminClass>(`/admin/classes/${classId}/councils`, payload);
 }
 
 /** Lấy sinh viên trong lớp. */
@@ -156,13 +289,15 @@ async function downloadImportTemplate() {
 async function importStudents(payload: ImportStudentsPayload) {
   const formData = new FormData();
   formData.append('file', payload.file);
-  if (payload.classId) {
-    formData.append('classId', payload.classId);
-  }
 
   return post<ImportStudentsResult>('/admin/students/import', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+}
+
+/** Xác nhận nhập danh sách sinh viên sau preview. */
+async function confirmImportStudents(payload: ConfirmImportPayload) {
+  return post<ImportStudentsResult>('/admin/students/import/confirm', payload);
 }
 
 /** Nhập sinh viên vào lớp theo cách cũ. */
@@ -173,26 +308,6 @@ async function importStudentsToClass(classId: string, file: File) {
   return post<ImportStudentsResult>(`/admin/classes/${classId}/students/import`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-}
-
-/** Phân công hội đồng lớp. */
-async function assignClassCouncil(payload: AssignCouncilPayload) {
-  return post<unknown>('/council-assignments/class', payload);
-}
-
-/** Xóa phân công hội đồng lớp. */
-async function removeClassCouncilAssignment(id: string) {
-  return del<null>(`/council-assignments/class/${id}`);
-}
-
-/** Phân công hội đồng khoa. */
-async function assignFacultyCouncil(payload: AssignCouncilPayload) {
-  return post<unknown>('/council-assignments/faculty', payload);
-}
-
-/** Xóa phân công hội đồng khoa. */
-async function removeFacultyCouncilAssignment(id: string) {
-  return del<null>(`/council-assignments/faculty/${id}`);
 }
 
 /** Lấy số liệu báo cáo tổng quan. */
@@ -240,40 +355,59 @@ async function createPost(_accessTokenOrPayload: string | PostPayload, payload?:
 
 /** Lấy danh sách bài viết. */
 async function getPosts(_accessToken?: string) {
+  void _accessToken;
   return get<Post[]>('/posts');
 }
 
 export const API_Admin = {
   createUser,
+  createStudent,
   getUsers,
   getUserById,
+  deleteUser,
+  updateUserStatus,
+  deleteStudent,
+  updateStudentStatus,
   getAdminEvaluationList,
+  getAdminEvaluations,
+  getEvaluationDetail,
+  getSemesters,
+  getSemesterById,
+  createSemester,
+  updateSemester,
+  toggleSemesterActive,
   reopenEvaluation,
   reviewScoresByClassCouncil,
   reviewEvaluation,
+  finalizeEvaluation,
   getFaculties,
   getFacultyById,
   createFaculty,
   updateFaculty,
   updateFacultyStatus,
   deleteFaculty,
+  downloadFacultyImportTemplate,
+  importFaculties,
+  confirmImportFaculties,
   getMajors,
   getMajorById,
   createMajor,
   updateMajor,
   updateMajorStatus,
   deleteMajor,
+  downloadMajorImportTemplate,
+  importMajors,
+  confirmImportMajors,
   getClasses,
+  getClassById,
+  updateClassCouncils,
   getClassStudents,
   addStudentToClass,
   removeStudentFromClass,
   downloadImportTemplate,
   importStudents,
+  confirmImportStudents,
   importStudentsToClass,
-  assignClassCouncil,
-  removeClassCouncilAssignment,
-  assignFacultyCouncil,
-  removeFacultyCouncilAssignment,
   getReportsOverview,
   getTrainingResultsReport,
   getReportsByClass,

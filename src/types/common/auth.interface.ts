@@ -8,17 +8,40 @@ export interface User {
   username: string;
   role: UserRole;
   isActive: boolean;
+  email?: string;
+  fullName?: string;
+  phone?: string | null;
+  dateOfBirth?: string | null;
+  managedClasses?: Array<{
+    id?: string;
+    classId?: string;
+    code?: string;
+    classCode?: string;
+    name?: string;
+    className?: string;
+    enrollmentYear?: number;
+    studentCount?: number;
+    major?: {
+      name?: string;
+    };
+    facultyName?: string;
+    faculty?: {
+      name?: string;
+    };
+  }>;
 }
 
 /** Mã xác nhận đăng nhập. */
 export interface CaptchaResponse {
   captchaId: string;
   image: string;
+  expiresInSeconds?: number;
+  debugCode?: string;
 }
 
 /** Thông tin dùng để đăng nhập. */
 export interface LoginPayload {
-  email: string;
+  username: string;
   password: string;
   captchaId?: string;
   captchaCode?: string;
@@ -52,8 +75,11 @@ export interface ChangePasswordPayload {
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  isHydrated: boolean;
+  hydrateAuth: () => void;
+  login: (username: string, password: string, captchaId: string, captchaCode: string) => Promise<boolean>;
   loginMock: (role: UserRole) => void;
   logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   updateProfile: (data: Partial<Student | Admin>) => Promise<void>;
 }

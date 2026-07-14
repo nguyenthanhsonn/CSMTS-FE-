@@ -23,6 +23,7 @@ export interface Student extends User {
   role: 'student';
   studentCode: string;
   fullName: string;
+  email?: string;
   dateOfBirth: string;
   className?: string;
   major?: string | StudentMajor;

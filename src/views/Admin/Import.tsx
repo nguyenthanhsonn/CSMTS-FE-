@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, ChangeEvent } from 'react';
-import { Upload, FileSpreadsheet, FileText, CheckCircle, XCircle, Download, Loader2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, FileText, CheckCircle, XCircle, Download, Loader2, Send } from 'lucide-react';
 import { API_Admin } from '../../api/API_Admin';
-import { ImportResult } from '../../types';
+import type { ImportStudentsResult } from '../../types';
 
 export const AdminImport = () => {
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importResult, setImportResult] = useState<ImportStudentsResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
 
   const handleDownloadTemplate = async () => {
     try {
@@ -37,18 +39,35 @@ export const AdminImport = () => {
     setLoading(true);
     setErrorMsg('');
     setImportResult(null);
+    setConfirmed(false);
 
     try {
       const res = await API_Admin.importStudents({ file });
-      setImportResult({
-        success: res.success,
-        failed: res.failed,
-        errors: res.errors || [],
-      });
+      setImportResult(res);
     } catch (err: any) {
       setErrorMsg(err.message || 'Không thể import danh sách sinh viên.');
     } finally {
       setLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!importResult?.importToken) {
+      setErrorMsg('Phiên import không hợp lệ, vui lòng tải lại file.');
+      return;
+    }
+
+    try {
+      setConfirming(true);
+      setErrorMsg('');
+      const res = await API_Admin.confirmImportStudents({ importToken: importResult.importToken });
+      setImportResult(res);
+      setConfirmed(true);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Không thể xác nhận import sinh viên.');
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -68,23 +87,14 @@ export const AdminImport = () => {
           <p className="text-xs sm:text-sm text-gray-500 mb-3.5">
             Vui lòng tải file mẫu và điền thông tin sinh viên theo đúng định dạng quy định bên dưới.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleDownloadTemplate}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer disabled:opacity-50"
-            >
-              <Download size={16} />
-              Tải mẫu Excel
-            </button>
-            <button
-              onClick={() => alert('Hệ thống hiện tại chỉ hỗ trợ nhập file mẫu từ Excel.')}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer"
-            >
-              <Download size={16} />
-              Tải mẫu Word
-            </button>
-          </div>
+          <button
+            onClick={handleDownloadTemplate}
+            disabled={loading}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer disabled:opacity-50"
+          >
+            <Download size={16} />
+            Tải mẫu Excel
+          </button>
         </div>
 
         {/* Card 2: Upload file danh sách */}
@@ -105,7 +115,7 @@ export const AdminImport = () => {
                 </p>
                 <input
                   type="file"
-                  accept=".xlsx,.xls,.doc,.docx"
+                  accept=".xlsx,.xls"
                   onChange={handleFileUpload}
                   className="hidden"
                   id="file-upload"
@@ -118,7 +128,7 @@ export const AdminImport = () => {
                   Chọn file từ máy
                 </label>
                 <p className="text-[11px] text-gray-500 mt-2.5">
-                  Hỗ trợ các định dạng: Excel (.xlsx, .xls) hoặc Word (.doc, .docx)
+                  Hỗ trợ các định dạng: Excel (.xlsx, .xls)
                 </p>
               </div>
             )}
@@ -136,15 +146,33 @@ export const AdminImport = () => {
         {/* Card 3: Kết quả import */}
         {importResult && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-3.5">Kết quả import</h2>
+            <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-3.5">
+              {confirmed ? 'Kết quả import' : 'Preview import'}
+            </h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {importResult.importToken && !confirmed && (
+              <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+                File hợp lệ. Dữ liệu chưa được ghi vào hệ thống, vui lòng kiểm tra và bấm xác nhận import.
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
               <div className="p-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="text-green-600" size={20} />
                   <span className="text-xs font-semibold text-green-900">Thành công</span>
                 </div>
-                <p className="text-2xl font-bold text-green-600">{importResult.success}</p>
+                <p className="text-2xl font-bold text-green-600">{importResult.successCount}</p>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                <span className="text-xs font-semibold text-blue-900">Tổng dòng</span>
+                <p className="text-2xl font-bold text-blue-600">{importResult.totalRows}</p>
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg flex items-center justify-between">
+                <span className="text-xs font-semibold text-amber-900">Bỏ qua</span>
+                <p className="text-2xl font-bold text-amber-600">{importResult.skippedCount}</p>
               </div>
               
               <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
@@ -152,7 +180,7 @@ export const AdminImport = () => {
                   <XCircle className="text-red-600" size={20} />
                   <span className="text-xs font-semibold text-red-900">Thất bại</span>
                 </div>
-                <p className="text-2xl font-bold text-red-600">{importResult.failed}</p>
+                <p className="text-2xl font-bold text-red-600">{importResult.failedCount}</p>
               </div>
             </div>
 
@@ -163,16 +191,60 @@ export const AdminImport = () => {
                   {importResult.errors.map((error, index) => (
                     <div key={index} className="flex items-start gap-1.5 text-xs text-red-600 font-medium">
                       <FileText size={14} className="flex-shrink-0 mt-0.5" />
-                      <span>{error}</span>
+                      <span>{[error.field, error.error].filter(Boolean).join(': ') || 'Dữ liệu không hợp lệ'}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
+            {importResult.createdAccounts.length > 0 && (
+              <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
+                <h3 className="mb-3 text-sm font-bold text-emerald-900">Các tài khoản vừa được tạo</h3>
+                <p className="mb-3 text-xs font-medium text-emerald-800">
+                  Chỉ sinh viên chưa có tài khoản mới nằm trong danh sách này. Username và password được lấy nguyên từ response import lần này.
+                </p>
+                <div className="max-h-[260px] overflow-auto rounded-lg border border-emerald-100 bg-white">
+                  <table className="w-full min-w-[720px] text-left text-xs">
+                    <thead className="bg-gray-50 text-gray-600">
+                      <tr>
+                        <th className="px-3 py-2 font-bold">Mã SV</th>
+                        <th className="px-3 py-2 font-bold">Họ tên</th>
+                        <th className="px-3 py-2 font-bold">Email</th>
+                        <th className="px-3 py-2 font-bold">Username</th>
+                        <th className="px-3 py-2 font-bold">Password</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importResult.createdAccounts.map((account, index) => (
+                        <tr key={`${account.studentCode}-${index}`} className="border-t border-gray-100">
+                          <td className="px-3 py-2 font-mono text-gray-700">{account.studentCode}</td>
+                          <td className="px-3 py-2 text-gray-700">{account.fullName}</td>
+                          <td className="px-3 py-2 text-gray-700">{account.email}</td>
+                          <td className="px-3 py-2 font-mono font-bold text-gray-900">{account.username}</td>
+                          <td className="px-3 py-2 font-mono font-bold text-gray-900">{account.password}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {confirmed && (
+              <div className="mt-4 rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
+                Đã import thành công. Email đã gửi: {importResult.emailSentCount ?? 0}, gửi lỗi: {importResult.emailFailedCount ?? 0}.
+              </div>
+            )}
+
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <button className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition">
-                Xác nhận import {importResult.success} sinh viên
+              <button
+                onClick={handleConfirmImport}
+                disabled={confirming || confirmed || !importResult.importToken || importResult.failedCount > 0}
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {confirming ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                {confirmed ? 'Đã xác nhận import' : `Xác nhận import ${importResult.successCount} sinh viên`}
               </button>
             </div>
           </div>
