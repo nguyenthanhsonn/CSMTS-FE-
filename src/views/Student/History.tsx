@@ -263,6 +263,10 @@ export const StudentHistory = () => {
     return '';
   };
 
+  const getEvaluationScore = (item: any) => item.totalScore ?? item.finalScore ?? item.classScore ?? item.studentScore ?? 0;
+
+  const getEvaluationRank = (item: any) => item.classification ?? item.rank ?? item.rating ?? null;
+
   const getAcademicYearStart = (academicYear: string) => {
     const startYear = Number.parseInt(academicYear.split('-')[0] || academicYear, 10);
     return Number.isNaN(startYear) ? 0 : startYear;
@@ -446,11 +450,8 @@ export const StudentHistory = () => {
 	              const statusBadge = getStatusBadge(item.status);
 	              const academicYear = getAcademicYear(item);
 	              const semesterLabel = getSemesterLabel(item);
-              const totalScore = item.finalScore !== null && item.finalScore !== undefined 
-                ? item.finalScore 
-                : item.classScore !== null && item.classScore !== undefined 
-                ? item.classScore 
-                : item.studentScore;
+              const totalScore = getEvaluationScore(item);
+              const rank = getEvaluationRank(item);
 
               return (
                 <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-3.5 transition hover:shadow-md">
@@ -482,8 +483,8 @@ export const StudentHistory = () => {
                     </div>
                     <div>
                       <p className="text-[10px] text-gray-500 uppercase tracking-wide">Xếp loại</p>
-                      <p className={`text-xs font-bold mt-0.5 ${getRatingColor(item.rank || item.rating)}`}>
-                        {getRankText(item.rank || item.rating)}
+                      <p className={`text-xs font-bold mt-0.5 ${getRatingColor(rank)}`}>
+                        {getRankText(rank)}
                       </p>
 	                    </div>
 	                    <div className="flex items-center justify-end col-span-2 sm:col-span-1">

@@ -14,9 +14,6 @@ type SemesterFormState = {
   semester: string;
   startDate: string;
   endDate: string;
-  studentDeadline: string;
-  classDeadline: string;
-  facultyDeadline: string;
   isActive: boolean;
 };
 
@@ -25,9 +22,6 @@ const defaultForm: SemesterFormState = {
   semester: 'HK1',
   startDate: '',
   endDate: '',
-  studentDeadline: '',
-  classDeadline: '',
-  facultyDeadline: '',
   isActive: false,
 };
 
@@ -59,34 +53,18 @@ const normalizeSemester = (item: any): AdminSemester => ({
   semesterName: item.semesterName || semesterLabels[item.semester] || item.semester,
   name: item.name,
   startDate: item.startDate || '',
-  endDate: item.endDate || '',
-  studentDeadline: item.studentDeadline || null,
-  classDeadline: item.classDeadline || null,
-  facultyDeadline: item.facultyDeadline || null,
-  isActive: item.isActive ?? false,
+  endDate: item.endDate || '',  isActive: item.isActive ?? false,
   hasEvaluationForms: item.hasEvaluationForms ?? false,
 });
 
-const validateSemesterForm = (values: SemesterFormState, deadlineOnly: boolean) => {
-  if (!deadlineOnly) {
-    if (!values.year.trim() || Number.isNaN(Number(values.year))) return 'Vui lòng nhập năm bắt đầu hợp lệ.';
-    if (!values.semester) return 'Vui lòng chọn học kỳ.';
-    if (!values.startDate) return 'Vui lòng chọn ngày bắt đầu.';
-    if (!values.endDate) return 'Vui lòng chọn ngày kết thúc.';
-  }
+const validateSemesterForm = (values: SemesterFormState) => {
+  if (!values.year.trim() || Number.isNaN(Number(values.year))) return 'Vui lòng nhập năm bắt đầu hợp lệ.';
+  if (!values.semester) return 'Vui lòng chọn học kỳ.';
+  if (!values.startDate) return 'Vui lòng chọn ngày bắt đầu.';
+  if (!values.endDate) return 'Vui lòng chọn ngày kết thúc.';
 
-  const dates = [
-    values.startDate,
-    values.studentDeadline,
-    values.classDeadline,
-    values.facultyDeadline,
-    values.endDate,
-  ].filter(Boolean);
-
-  for (let i = 1; i < dates.length; i += 1) {
-    if (new Date(dates[i - 1]).getTime() > new Date(dates[i]).getTime()) {
-      return 'Thứ tự ngày phải là: bắt đầu ≤ hạn sinh viên ≤ hạn lớp ≤ hạn khoa ≤ kết thúc.';
-    }
+  if (new Date(values.startDate).getTime() > new Date(values.endDate).getTime()) {
+    return 'Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.';
   }
 
   return '';
@@ -107,7 +85,6 @@ function SemesterModal({
 }) {
   const [values, setValues] = useState<SemesterFormState>(defaultForm);
   const [error, setError] = useState('');
-  const deadlineOnly = Boolean(editing?.hasEvaluationForms);
 
   useEffect(() => {
     if (!open) return;
@@ -119,9 +96,6 @@ function SemesterModal({
             semester: editing.semester,
             startDate: toDateInput(editing.startDate),
             endDate: toDateInput(editing.endDate),
-            studentDeadline: toDateInput(editing.studentDeadline),
-            classDeadline: toDateInput(editing.classDeadline),
-            facultyDeadline: toDateInput(editing.facultyDeadline),
             isActive: editing.isActive,
           }
         : defaultForm
@@ -135,30 +109,19 @@ function SemesterModal({
   };
 
   const handleSubmit = () => {
-    const validationError = validateSemesterForm(values, deadlineOnly);
+    const validationError = validateSemesterForm(values);
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    const basePayload: SemesterPayload = {
-      studentDeadline: values.studentDeadline || undefined,
-      classDeadline: values.classDeadline || undefined,
-      facultyDeadline: values.facultyDeadline || undefined,
-    };
-
-    onSubmit(
-      deadlineOnly
-        ? basePayload
-        : {
-            ...basePayload,
-            year: Number(values.year),
-            semester: values.semester,
-            startDate: values.startDate,
-            endDate: values.endDate,
-            isActive: values.isActive,
-          }
-    );
+    onSubmit({
+      year: Number(values.year),
+      semester: values.semester,
+      startDate: values.startDate,
+      endDate: values.endDate,
+      isActive: values.isActive,
+    });
   };
 
   return (
@@ -167,11 +130,6 @@ function SemesterModal({
         <div className="mb-5 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900">{editing ? 'Sửa học kỳ' : 'Tạo học kỳ mới'}</h2>
-            {deadlineOnly && (
-              <p className="mt-1 text-xs font-semibold text-amber-700">
-                Học kỳ đã phát sinh phiếu, chỉ có thể sửa deadline.
-              </p>
-            )}
           </div>
           <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-500 hover:bg-gray-100">
             Đóng
@@ -189,18 +147,16 @@ function SemesterModal({
             Năm bắt đầu
             <input
               value={values.year}
-              disabled={deadlineOnly}
               onChange={(e) => setField('year', e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-gray-100"
+              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </label>
           <label className="text-sm font-semibold text-gray-700">
             Học kỳ
             <select
               value={values.semester}
-              disabled={deadlineOnly}
               onChange={(e) => setField('semester', e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-gray-100"
+              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="HK1">Học kỳ 1</option>
               <option value="HK2">Học kỳ 2</option>
@@ -212,9 +168,8 @@ function SemesterModal({
             <input
               type="date"
               value={values.startDate}
-              disabled={deadlineOnly}
               onChange={(e) => setField('startDate', e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-gray-100"
+              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </label>
           <label className="text-sm font-semibold text-gray-700">
@@ -222,35 +177,7 @@ function SemesterModal({
             <input
               type="date"
               value={values.endDate}
-              disabled={deadlineOnly}
               onChange={(e) => setField('endDate', e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-gray-100"
-            />
-          </label>
-          <label className="text-sm font-semibold text-gray-700">
-            Hạn sinh viên
-            <input
-              type="date"
-              value={values.studentDeadline}
-              onChange={(e) => setField('studentDeadline', e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-          </label>
-          <label className="text-sm font-semibold text-gray-700">
-            Hạn cấp lớp
-            <input
-              type="date"
-              value={values.classDeadline}
-              onChange={(e) => setField('classDeadline', e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-          </label>
-          <label className="text-sm font-semibold text-gray-700">
-            Hạn cấp khoa
-            <input
-              type="date"
-              value={values.facultyDeadline}
-              onChange={(e) => setField('facultyDeadline', e.target.value)}
               className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </label>
@@ -438,7 +365,7 @@ export const AdminSemesters = () => {
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
           >
             <Edit size={14} />
-            {row.hasEvaluationForms ? 'Sửa deadline' : 'Sửa'}
+            Sửa
           </button>
           <button
             onClick={() => setConfirmTarget(row)}
@@ -457,7 +384,7 @@ export const AdminSemesters = () => {
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý Học kỳ</h1>
-          <p className="mt-1 text-sm text-gray-500">Tạo, chỉnh deadline và mở/đóng kỳ đánh giá rèn luyện.</p>
+          <p className="mt-1 text-sm text-gray-500">Tạo, chỉnh sửa và mở/đóng kỳ đánh giá rèn luyện.</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <select

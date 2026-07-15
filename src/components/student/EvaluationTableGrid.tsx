@@ -11,8 +11,11 @@ interface DeductionStepperProps {
   weight: number; noViolationScore: number; allDeductions: number[];
   currentUserRole: 'student' | 'class'; isReadOnly: boolean;
 }
-const DeductionStepper = ({ isSv, value, onChange, disabled, currentUserRole, isReadOnly }: DeductionStepperProps) => {
-  const maxTimes = 99;
+const DeductionStepper = ({ isSv, index, value, onChange, disabled, weight, noViolationScore, allDeductions, currentUserRole, isReadOnly }: DeductionStepperProps) => {
+  const sumOther = allDeductions.reduce((s, c, i) => i === index ? s : s + (Number(c) || 0) * DEDUCTION_WEIGHTS[i], 0);
+  const baseScore = Number(noViolationScore) || 0;
+  const remainingScore = Math.max(0, baseScore - sumOther);
+  const maxTimes = weight > 0 ? Math.ceil(remainingScore / weight) : 0;
   const disabledPlus = disabled || value >= maxTimes;
   const disabledMinus = disabled || value <= 0;
   const [localVal, setLocalVal] = useState(String(value));
@@ -223,13 +226,13 @@ export const EvaluationTableGrid = (props: EvaluationTableGridProps) => {
     {value:'none',label:'0.00 đ - Khác / Không đạt'},
   ];
 
-  const act1Opts = [{value:'active',label:'5đ - Tích cực, đầy đủ'},{value:'full',label:'3đ - Đầy đủ'},{value:'excused',label:'2đ - Có lý do'},{value:'unexcused',label:'0đ - Không tham gia'}];
+  const act1Opts = [{value:'GOOD_PARTICIPATION',label:'5đ - Tham gia tốt, đầy đủ'},{value:'ABSENT_ONCE',label:'3đ - Vắng 1 lần'},{value:'ABSENT_TWICE',label:'2đ - Vắng 2 lần'},{value:'ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED',label:'0đ - Vắng trên 2 lần hoặc không tham gia'}];
   const act2Opts = [{value:'many',label:'5đ - Nhiều, hiệu quả'},{value:'some',label:'3đ - Một phần'},{value:'active',label:'2đ - Tích cực tuyên truyền'},{value:'full',label:'1đ - Ít'},{value:'none',label:'0đ - Không'}];
   const act3Opts = [{value:'prize_or_org',label:'5đ - Đạt giải/Tổ chức'},{value:'active',label:'3đ - Tích cực'},{value:'some',label:'2đ - Một phần'},{value:'full',label:'1đ - Ít'},{value:'none',label:'0đ - Không'}];
   const act4Opts = [{value:'active',label:'3đ - Tốt, báo cáo đúng'},{value:'full',label:'2đ - 1 hoạt động'},{value:'some',label:'1đ - Có ý thức'},{value:'none',label:'0đ - Vi phạm/CB'}];
-  const policyOpts = [{value:'excellent_propaganda',label:'10đ - Tuyên truyền xuất sắc'},{value:'good',label:'8đ - Chấp hành tốt'},{value:'minor_violation',label:'5đ - Vi phạm nhỏ'},{value:'none',label:'0đ - Vi phạm nghiêm trọng'}];
+  const policyOpts = [{value:'GOOD_WITH_REWARD',label:'10đ - Chấp hành tốt, có khen thưởng'},{value:'GOOD',label:'8đ - Chấp hành tốt'},{value:'AVERAGE',label:'5đ - Chấp hành trung bình'},{value:'VIOLATED',label:'0đ - Vi phạm'}];
   const solidarityOpts = [{value:'excellent_achievements',label:'10đ - Thành tích đặc biệt'},{value:'regular',label:'8đ - Tốt'},{value:'some',label:'5đ - Có hỗ trợ'},{value:'none',label:'0đ - Không tham gia'}];
-  const localityOpts = [{value:'good',label:'5đ - Khai báo đúng hạn'},{value:'rewarded',label:'1đ - Khen thưởng KTX'},{value:'warned',label:'0đ - Vi phạm/CB'}];
+  const localityOpts = [{value:'GOOD',label:'5đ - Khai báo/cư trú đúng quy định'},{value:'ONE_WARNING',label:'1đ - Bị nhắc nhở/kiểm điểm 1 lần'},{value:'TWO_WARNINGS',label:'0đ - Bị nhắc nhở/kiểm điểm từ 2 lần'}];
   const a1PerfOpts = [{value:'excellent',label:'7đ - Xuất sắc'},{value:'good',label:'6đ - Tốt'},{value:'average',label:'4đ - Đạt'},{value:'unsatisfactory',label:'0đ - Không đạt'}];
   const a2PerfOpts = [{value:'excellent',label:'6đ - Xuất sắc'},{value:'good',label:'5đ - Tốt'},{value:'average',label:'3đ - Đạt'},{value:'unsatisfactory',label:'0đ - Không đạt'}];
   const mgmtOpts = [{value:'head',label:'3đ - Trưởng ban'},{value:'deputy',label:'2đ - Phó ban'},{value:'member',label:'1đ - Thành viên'},{value:'none',label:'0đ - Không'}];
@@ -456,7 +459,7 @@ export const EvaluationTableGrid = (props: EvaluationTableGridProps) => {
                 <td className={`${tdR} text-center font-bold text-gray-600`}>{row.max}.00</td>
                 <td className={tdR}>
                   <NoteArea value={notes[`sv_${row.key}`]||''} onChange={v=>setNote(`sv_${row.key}`,v)} disabled={!isSvEditable||isSvViolationSec4}/>
-                  {row.key==='iv1'&&svPolicy==='excellent_propaganda'&& (
+                  {row.key==='iv1'&&svPolicy==='GOOD_WITH_REWARD'&& (
                     <div className="mt-2 border-t pt-1.5 border-gray-100">
                       <span className="text-[10px] font-bold text-gray-600 block">Minh chứng tuyên truyền xuất sắc:</span>
                       <MiniUpload fileKey="sv_policy" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required/>

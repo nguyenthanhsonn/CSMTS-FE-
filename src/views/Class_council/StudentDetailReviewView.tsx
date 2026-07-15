@@ -79,23 +79,23 @@ export function StudentDetailReviewView() {
   const [classNoViolationScore, setClassNoViolationScore] = useState(25);
   const [classDeductions, setClassDeductions] = useState([0, 1, 0, 0, 0, 0, 0, 0, 0]);
 
-  const [svActivity1, setSvActivity1] = useState('active');
+  const [svActivity1, setSvActivity1] = useState('GOOD_PARTICIPATION');
   const [svActivity2, setSvActivity2] = useState('some');
   const [svActivity3, setSvActivity3] = useState('active');
   const [svActivity4, setSvActivity4] = useState('active');
   const [svRewardPoints, setSvRewardPoints] = useState(1);
-  const [classActivity1, setClassActivity1] = useState('active');
+  const [classActivity1, setClassActivity1] = useState('GOOD_PARTICIPATION');
   const [classActivity2, setClassActivity2] = useState('some');
   const [classActivity3, setClassActivity3] = useState('active');
   const [classActivity4, setClassActivity4] = useState('active');
   const [classRewardPoints, setClassRewardPoints] = useState(1);
 
-  const [svPolicy, setSvPolicy] = useState('good');
+  const [svPolicy, setSvPolicy] = useState('GOOD');
   const [svSolidarity, setSvSolidarity] = useState('regular');
-  const [svLocality, setSvLocality] = useState('good');
-  const [classPolicy, setClassPolicy] = useState('good');
+  const [svLocality, setSvLocality] = useState('GOOD');
+  const [classPolicy, setClassPolicy] = useState('GOOD');
   const [classSolidarity, setClassSolidarity] = useState('regular');
-  const [classLocality, setClassLocality] = useState('good');
+  const [classLocality, setClassLocality] = useState('GOOD');
 
   const [svRoleType, setSvRoleType] = useState<'cadre' | 'student'>('student');
   const [svCadrePosition, setSvCadrePosition] = useState<'a1' | 'a2'>('a2');
@@ -128,13 +128,13 @@ export function StudentDetailReviewView() {
   const scoreMaps = useMemo(() => ({
     studyAttitude: { very_good: 6, good: 5, fair: 4, average: 2, poor: 1, none: 0 } as Record<string, number>,
     academicRank: { excellent: 8, good: 7, fair: 6, average: 4, weak_no_warn: 2, weak_warn: 1, none: 0 } as Record<string, number>,
-    activity1: { active: 5, full: 3, excused: 2, unexcused: 0 } as Record<string, number>,
+    activity1: { GOOD_PARTICIPATION: 5, ABSENT_ONCE: 3, ABSENT_TWICE: 2, ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED: 0, active: 5, full: 3, excused: 2, unexcused: 0 } as Record<string, number>,
     activity2: { many: 5, some: 3, active: 2, full: 1, none: 0 } as Record<string, number>,
     activity3: { prize_or_org: 5, active: 3, some: 2, full: 1, none: 0 } as Record<string, number>,
     activity4: { active: 3, full: 2, some: 1, none: 0 } as Record<string, number>,
-    policy: { excellent_propaganda: 10, good: 8, minor_violation: 5, none: 0 } as Record<string, number>,
+    policy: { GOOD_WITH_REWARD: 10, GOOD: 8, AVERAGE: 5, VIOLATED: 0, excellent_propaganda: 10, good: 8, minor_violation: 5, none: 0 } as Record<string, number>,
     solidarity: { excellent_achievements: 10, regular: 8, some: 5, none: 0 } as Record<string, number>,
-    locality: { good: 5, rewarded: 1, warned: 0 } as Record<string, number>,
+    locality: { GOOD: 5, ONE_WARNING: 1, TWO_WARNINGS: 0, good: 5, rewarded: 1, warned: 0 } as Record<string, number>,
   }), []);
 
   useEffect(() => {
@@ -147,6 +147,8 @@ export function StudentDetailReviewView() {
     return () => window.clearTimeout(timer);
   }, [student]);
 
+  const clampScore = (value: number, max: number) => Math.min(max, Math.max(0, Number.isFinite(value) ? value : 0));
+
   const calculateTotalPoints = (isSv: boolean) => {
     const sec1Violation = isSv ? isSvViolationSec1 : isClassViolationSec1;
     const sec2Violation = isSv ? isSvViolationSec2 : isClassViolationSec2;
@@ -156,7 +158,7 @@ export function StudentDetailReviewView() {
 
     const sec1 = sec1Violation
       ? 0
-      : Math.min(
+      : clampScore(
           (scoreMaps.studyAttitude[isSv ? svStudyAttitude : classStudyAttitude] || 0) +
             (isSv ? (svNckh ? 2 : 0) + (svOlympic ? 2 : 0) + (svCreative ? 2 : 0) : (classNckh ? 2 : 0) + (classOlympic ? 2 : 0) + (classCreative ? 2 : 0)) +
             (scoreMaps.academicRank[isSv ? svAcademicRank : classAcademicRank] || 0),
@@ -166,11 +168,11 @@ export function StudentDetailReviewView() {
     const noViolationBase = isSv ? svNoViolationScore : classNoViolationScore;
     const deductions = isSv ? svDeductions : classDeductions;
     const totalDeduction = deductions.reduce((sum, count, index) => sum + count * deductionWeights[index], 0);
-    const sec2 = sec2Violation ? 0 : Math.max(0, Math.min(noViolationBase - totalDeduction, 25));
+    const sec2 = sec2Violation ? 0 : clampScore(noViolationBase - totalDeduction, 25);
 
     const sec3 = sec3Violation
       ? 0
-      : Math.min(
+      : clampScore(
           (scoreMaps.activity1[isSv ? svActivity1 : classActivity1] || 0) +
             (scoreMaps.activity2[isSv ? svActivity2 : classActivity2] || 0) +
             (scoreMaps.activity3[isSv ? svActivity3 : classActivity3] || 0) +
@@ -181,7 +183,7 @@ export function StudentDetailReviewView() {
 
     const sec4 = sec4Violation
       ? 0
-      : Math.min(
+      : clampScore(
           (scoreMaps.policy[isSv ? svPolicy : classPolicy] || 0) +
             (scoreMaps.solidarity[isSv ? svSolidarity : classSolidarity] || 0) +
             (scoreMaps.locality[isSv ? svLocality : classLocality] || 0),
@@ -199,14 +201,14 @@ export function StudentDetailReviewView() {
           ? { excellent: 7, good: 6, average: 4, unsatisfactory: 0 }
           : { excellent: 6, good: 5, average: 3, unsatisfactory: 0 };
         const mgmtMap: Record<string, number> = { head: 3, deputy: 2, member: 1, none: 0 };
-        sec5 = Math.min((perfMap[performance as keyof typeof perfMap] || 0) + (mgmtMap[management] || 0), 10);
+        sec5 = clampScore((perfMap[performance as keyof typeof perfMap] || 0) + (mgmtMap[management] || 0), 10);
       } else {
         const achievementMap: Record<string, number> = { national_intl: 7, provincial: 5, none: 0 };
-        sec5 = Math.min((isSv ? svClassParticipation : classClassParticipation) + (achievementMap[isSv ? svSpecialAchievement : classSpecialAchievement] || 0), 10);
+        sec5 = clampScore((isSv ? svClassParticipation : classClassParticipation) + (achievementMap[isSv ? svSpecialAchievement : classSpecialAchievement] || 0), 10);
       }
     }
 
-    return { sec1, sec2, sec3, sec4, sec5, total: sec1 + sec2 + sec3 + sec4 + sec5 };
+    return { sec1, sec2, sec3, sec4, sec5, total: clampScore(sec1 + sec2 + sec3 + sec4 + sec5, 100) };
   };
 
   const svScores = calculateTotalPoints(true);
@@ -220,8 +222,15 @@ export function StudentDetailReviewView() {
   }), []);
 
   const handleDeductionChange = (isSv: boolean, index: number, value: number) => {
+    const baseScore = isSv ? svNoViolationScore : classNoViolationScore;
     const setter = isSv ? setSvDeductions : setClassDeductions;
-    setter((current) => current.map((count, idx) => (idx === index ? value : count)));
+    setter((current) => {
+      const weight = deductionWeights[index] || 0;
+      const sumOther = current.reduce((sum, count, idx) => idx === index ? sum : sum + (Number(count) || 0) * deductionWeights[idx], 0);
+      const remainingScore = Math.max(0, baseScore - sumOther);
+      const maxTimes = weight > 0 ? Math.ceil(remainingScore / weight) : 0;
+      return current.map((count, idx) => (idx === index ? Math.min(maxTimes, Math.max(0, value)) : count));
+    });
   };
 
   const handleFileUpload = () => {

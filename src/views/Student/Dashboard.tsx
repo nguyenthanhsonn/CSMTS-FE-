@@ -165,12 +165,14 @@ export const StudentDashboard = () => {
   }, []);
 
   const normalizeStatus = (status?: string) => String(status || '').toLowerCase();
+  const getEvaluationScore = (item: any) => item.totalScore ?? item.finalScore ?? item.classScore ?? item.studentScore ?? 0;
+  const getEvaluationRank = (item: any) => item.classification ?? item.rank ?? item.rating ?? null;
   const submittedCount = history.filter((item) => item.status && normalizeStatus(item.status) !== 'draft').length;
   const approvedCount = history.filter((item) => normalizeStatus(item.status) === 'finalized').length;
   const draftCount = history.filter((item) => !item.status || normalizeStatus(item.status) === 'draft').length;
   const averageScore = history.length
     ? Math.round(
-        history.reduce((total, item) => total + (item.finalScore ?? item.classScore ?? item.studentScore ?? 0), 0) /
+        history.reduce((total, item) => total + getEvaluationScore(item), 0) /
           history.length
       )
     : 0;
@@ -367,14 +369,11 @@ export const StudentDashboard = () => {
                 const semLabel = item.semester && typeof item.semester === 'object'
                   ? `${item.semester.semester === 'SEMESTER_1' ? 'HK1' : 'HK2'} ${item.semester.year}`
                   : `${item.semester}`;
-                const score = item.finalScore !== null && item.finalScore !== undefined 
-                  ? item.finalScore 
-                  : item.classScore !== null && item.classScore !== undefined 
-                  ? item.classScore 
-                  : item.studentScore;
+                const score = getEvaluationScore(item);
+                const rank = getEvaluationRank(item);
                 const badgeColors = getBadgeColors(item.status);
-                const rankColors = getRankBadgeColors(item.rank || item.rating);
-                const rankText = getRankText(item.rank || item.rating);
+                const rankColors = getRankBadgeColors(rank);
+                const rankText = getRankText(rank);
                 const statusText = getStatusText(item.status);
 
                 return (
