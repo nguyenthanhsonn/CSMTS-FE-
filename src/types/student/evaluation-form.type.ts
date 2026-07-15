@@ -41,6 +41,8 @@ export interface EvaluationForm {
   studentScore?: number | null;
   classScore?: number | null;
   finalScore?: number | null;
+  totalScore?: number | null;
+  classification?: string | null;
   rank?: string;
   period: EvaluationPeriod;
   status: EvaluationStatus;

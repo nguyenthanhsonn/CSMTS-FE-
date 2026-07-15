@@ -35,7 +35,7 @@ async function updateMyProfile(payload: StudentProfileUpdatePayload) {
 /** Lấy danh sách phiếu của sinh viên. */
 async function getMyEvaluationList(_accessToken?: string) {
   void _accessToken;
-  return get<StudentEvaluation[]>('/students/me/evaluations');
+  return get<StudentEvaluation[]>('/training-evaluations/me');
 }
 
 /** Lấy danh sách học kỳ. */

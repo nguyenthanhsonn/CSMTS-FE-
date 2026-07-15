@@ -209,15 +209,15 @@ export const EvaluationFormQD4185 = () => {
   const [svNoViolationScore, setSvNoViolationScore] = useState<number>(0);
   const [svDeductions, setSvDeductions] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
-  const [svActivity1, setSvActivity1] = useState<string>('unexcused');
+  const [svActivity1, setSvActivity1] = useState<string>('ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED');
   const [svActivity2, setSvActivity2] = useState<string>('none');
   const [svActivity3, setSvActivity3] = useState<string>('none');
   const [svActivity4, setSvActivity4] = useState<string>('none');
   const [svRewardPoints, setSvRewardPoints] = useState<number>(0);
 
-  const [svPolicy, setSvPolicy] = useState<string>('none');
+  const [svPolicy, setSvPolicy] = useState<string>('VIOLATED');
   const [svSolidarity, setSvSolidarity] = useState<string>('none');
-  const [svLocality, setSvLocality] = useState<string>('warned');
+  const [svLocality, setSvLocality] = useState<string>('TWO_WARNINGS');
 
   const [svRoleType, setSvRoleType] = useState<'cadre' | 'student'>('student');
   const [svCadrePosition, setSvCadrePosition] = useState<'a1' | 'a2'>('a2');
@@ -236,15 +236,15 @@ export const EvaluationFormQD4185 = () => {
   const [classNoViolationScore, setClassNoViolationScore] = useState<number>(0);
   const [classDeductions, setClassDeductions] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
-  const [classActivity1, setClassActivity1] = useState<string>('unexcused');
+  const [classActivity1, setClassActivity1] = useState<string>('ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED');
   const [classActivity2, setClassActivity2] = useState<string>('none');
   const [classActivity3, setClassActivity3] = useState<string>('none');
   const [classActivity4, setClassActivity4] = useState<string>('none');
   const [classRewardPoints, setClassRewardPoints] = useState<number>(0);
 
-  const [classPolicy, setClassPolicy] = useState<string>('none');
+  const [classPolicy, setClassPolicy] = useState<string>('VIOLATED');
   const [classSolidarity, setClassSolidarity] = useState<string>('none');
-  const [classLocality, setClassLocality] = useState<string>('warned');
+  const [classLocality, setClassLocality] = useState<string>('TWO_WARNINGS');
 
   const [classRoleType, setClassRoleType] = useState<'cadre' | 'student'>('student');
   const [classCadrePosition, setClassCadrePosition] = useState<'a1' | 'a2'>('a2');
@@ -377,22 +377,29 @@ export const EvaluationFormQD4185 = () => {
 
   const mapActivity1 = (val: string) => {
     const dict = {
+      GOOD_PARTICIPATION: 'GOOD_PARTICIPATION',
+      ABSENT_ONCE: 'ABSENT_ONCE',
+      ABSENT_TWICE: 'ABSENT_TWICE',
+      ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED: 'ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED',
       active: 'GOOD_PARTICIPATION',
-      full: 'MEDIUM_PARTICIPATION',
-      excused: 'LOW_PARTICIPATION',
-      unexcused: 'NO_PARTICIPATION',
+      full: 'ABSENT_ONCE',
+      excused: 'ABSENT_TWICE',
+      unexcused: 'ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED',
     };
-    return dict[val as keyof typeof dict] || 'NO_PARTICIPATION';
+    return dict[val as keyof typeof dict] || 'ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED';
   };
 
   const reverseMapActivity1 = (val: string) => {
     const dict = {
-      GOOD_PARTICIPATION: 'active',
-      MEDIUM_PARTICIPATION: 'full',
-      LOW_PARTICIPATION: 'excused',
-      NO_PARTICIPATION: 'unexcused',
+      GOOD_PARTICIPATION: 'GOOD_PARTICIPATION',
+      ABSENT_ONCE: 'ABSENT_ONCE',
+      ABSENT_TWICE: 'ABSENT_TWICE',
+      ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED: 'ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED',
+      MEDIUM_PARTICIPATION: 'ABSENT_ONCE',
+      LOW_PARTICIPATION: 'ABSENT_TWICE',
+      NO_PARTICIPATION: 'ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED',
     };
-    return dict[val as keyof typeof dict] || 'unexcused';
+    return dict[val as keyof typeof dict] || 'ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED';
   };
 
   const mapActivity2 = (val: string) => {
@@ -461,22 +468,29 @@ export const EvaluationFormQD4185 = () => {
 
   const mapPolicy = (val: string) => {
     const dict = {
-      excellent_propaganda: 'EXCELLENT',
+      GOOD_WITH_REWARD: 'GOOD_WITH_REWARD',
+      GOOD: 'GOOD',
+      AVERAGE: 'AVERAGE',
+      VIOLATED: 'VIOLATED',
+      excellent_propaganda: 'GOOD_WITH_REWARD',
       good: 'GOOD',
-      minor_violation: 'FAIR',
-      none: 'POOR',
+      minor_violation: 'AVERAGE',
+      none: 'VIOLATED',
     };
-    return dict[val as keyof typeof dict] || 'POOR';
+    return dict[val as keyof typeof dict] || 'VIOLATED';
   };
 
   const reverseMapPolicy = (val: string) => {
     const dict = {
-      EXCELLENT: 'excellent_propaganda',
-      GOOD: 'good',
-      FAIR: 'minor_violation',
-      POOR: 'none',
+      GOOD_WITH_REWARD: 'GOOD_WITH_REWARD',
+      GOOD: 'GOOD',
+      AVERAGE: 'AVERAGE',
+      VIOLATED: 'VIOLATED',
+      EXCELLENT: 'GOOD_WITH_REWARD',
+      FAIR: 'AVERAGE',
+      POOR: 'VIOLATED',
     };
-    return dict[val as keyof typeof dict] || 'none';
+    return dict[val as keyof typeof dict] || 'VIOLATED';
   };
 
   const mapSolidarity = (val: string) => {
@@ -501,20 +515,25 @@ export const EvaluationFormQD4185 = () => {
 
   const mapLocality = (val: string) => {
     const dict = {
+      GOOD: 'GOOD',
+      ONE_WARNING: 'ONE_WARNING',
+      TWO_WARNINGS: 'TWO_WARNINGS',
       good: 'GOOD',
-      rewarded: 'FAIR',
-      warned: 'POOR',
+      rewarded: 'ONE_WARNING',
+      warned: 'TWO_WARNINGS',
     };
-    return dict[val as keyof typeof dict] || 'POOR';
+    return dict[val as keyof typeof dict] || 'TWO_WARNINGS';
   };
 
   const reverseMapLocality = (val: string) => {
     const dict = {
-      GOOD: 'good',
-      FAIR: 'rewarded',
-      POOR: 'warned',
+      GOOD: 'GOOD',
+      ONE_WARNING: 'ONE_WARNING',
+      TWO_WARNINGS: 'TWO_WARNINGS',
+      FAIR: 'ONE_WARNING',
+      POOR: 'TWO_WARNINGS',
     };
-    return dict[val as keyof typeof dict] || 'warned';
+    return dict[val as keyof typeof dict] || 'TWO_WARNINGS';
   };
 
   const mapCadrePerformance = (val: string) => {
@@ -582,14 +601,14 @@ export const EvaluationFormQD4185 = () => {
     setSvAcademicRank('none');
     setSvNoViolationScore(0);
     setSvDeductions([0, 0, 0, 0, 0, 0, 0, 0, 0]);
-    setSvActivity1('unexcused');
+    setSvActivity1('ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED');
     setSvActivity2('none');
     setSvActivity3('none');
     setSvActivity4('none');
     setSvRewardPoints(0);
-    setSvPolicy('none');
+    setSvPolicy('VIOLATED');
     setSvSolidarity('none');
-    setSvLocality('warned');
+    setSvLocality('TWO_WARNINGS');
     setSvRoleType('student');
     setSvCadrePosition('a2');
     setSvCadrePerformance('unsatisfactory');
@@ -603,14 +622,14 @@ export const EvaluationFormQD4185 = () => {
     setClassAcademicRank('none');
     setClassNoViolationScore(0);
     setClassDeductions([0, 0, 0, 0, 0, 0, 0, 0, 0]);
-    setClassActivity1('unexcused');
+    setClassActivity1('ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED');
     setClassActivity2('none');
     setClassActivity3('none');
     setClassActivity4('none');
     setClassRewardPoints(0);
-    setClassPolicy('none');
+    setClassPolicy('VIOLATED');
     setClassSolidarity('none');
-    setClassLocality('warned');
+    setClassLocality('TWO_WARNINGS');
     setClassRoleType('student');
     setClassCadrePosition('a2');
     setClassCadrePerformance('unsatisfactory');
@@ -669,15 +688,10 @@ export const EvaluationFormQD4185 = () => {
         setSvCreative(studyData.activities.some((a: any) => a.code === 'SCIENTIFIC_AWARD'));
       }
 
-      const isDraftEvaluation = normalizeEvaluationStatus(detail.status) === 'DRAFT';
       const disciplineViolations = Array.isArray(discData.violations) ? discData.violations : [];
-      const isDefaultDisciplineScore =
-        isDraftEvaluation &&
-        Number(discData.baseScore) === 25 &&
-        disciplineViolations.length === 0;
 
       if (discData.baseScore !== undefined) {
-        setSvNoViolationScore(isDefaultDisciplineScore ? 0 : discData.baseScore);
+        setSvNoViolationScore(Math.min(25, Math.max(0, Number(discData.baseScore) || 0)));
       }
       if (discData.violations) {
         const dec = [0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -1050,10 +1064,14 @@ export const EvaluationFormQD4185 = () => {
   }), []);
 
   const activity1Scores = useMemo<Record<string, number>>(() => ({
+    GOOD_PARTICIPATION: 5,
+    ABSENT_ONCE: 3,
+    ABSENT_TWICE: 2,
+    ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED: 0,
     active: 5,
     full: 3,
     excused: 2,
-    unexcused: 0
+    unexcused: 0,
   }), []);
 
   const activity2Scores = useMemo<Record<string, number>>(() => ({
@@ -1080,10 +1098,14 @@ export const EvaluationFormQD4185 = () => {
   }), []);
 
   const policyScores = useMemo<Record<string, number>>(() => ({
+    GOOD_WITH_REWARD: 10,
+    GOOD: 8,
+    AVERAGE: 5,
+    VIOLATED: 0,
     excellent_propaganda: 10,
     good: 8,
     minor_violation: 5,
-    none: 0
+    none: 0,
   }), []);
 
   const solidarityScores = useMemo<Record<string, number>>(() => ({
@@ -1094,9 +1116,12 @@ export const EvaluationFormQD4185 = () => {
   }), []);
 
   const localityScores = useMemo<Record<string, number>>(() => ({
+    GOOD: 5,
+    ONE_WARNING: 1,
+    TWO_WARNINGS: 0,
     good: 5,
     rewarded: 1,
-    warned: 0
+    warned: 0,
   }), []);
 
   const deductionWeights = useMemo(() => [10, 3, 5, 5, 5, 5, 5, 10, 20], []);
@@ -1112,6 +1137,8 @@ export const EvaluationFormQD4185 = () => {
     'Vi phạm quy chế thi ở mức cảnh cáo / trừ điểm thi (Trừ 10đ/lần)',
     'Vi phạm quy chế thi bị đình chỉ thi (Trừ 20đ/lần)',
   ], []);
+
+  const clampScore = (value: number, max: number) => Math.min(max, Math.max(0, Number.isFinite(value) ? value : 0));
 
   // Scoring function
   const calculateTotalPoints = (isSv: boolean) => {
@@ -1131,7 +1158,7 @@ export const EvaluationFormQD4185 = () => {
       const s1_att = studyAttitudeScores[attitude] || 0;
       const s1_act = (nckhVal ? 2 : 0) + (olympicVal ? 2 : 0) + (creativeVal ? 2 : 0);
       const s1_rank = academicRankScores[rank] || 0;
-      sec1 = Math.min(s1_att + s1_act + s1_rank, 20);
+      sec1 = clampScore(s1_att + s1_act + s1_rank, 20);
     }
 
     // -------------------------------------------------------------
@@ -1144,11 +1171,7 @@ export const EvaluationFormQD4185 = () => {
       const noViolationBase = isSv ? svNoViolationScore : classNoViolationScore;
       const currentDeductions = isSv ? svDeductions : classDeductions;
       const totalDeductionVal = currentDeductions.reduce((sum, count, idx) => sum + count * deductionWeights[idx], 0);
-      
-      // TODO: Xác nhận lại với đội nghiệp vụ xem điểm Mục II có được phép âm hay bắt buộc áp floor tại 0.
-      // Hiện tại theo yêu cầu, hệ thống đang giới hạn số lần vi phạm nhập vào ở stepper sao cho tổng điểm không âm,
-      // và áp floor Math.max(0, ...) để điểm Mục II không bao giờ dưới 0.
-      sec2 = Math.max(0, Math.min(noViolationBase - totalDeductionVal, 25));
+      sec2 = clampScore(noViolationBase - totalDeductionVal, 25);
     }
 
     // -------------------------------------------------------------
@@ -1165,7 +1188,7 @@ export const EvaluationFormQD4185 = () => {
       const reward = isSv ? svRewardPoints : classRewardPoints;
 
       const s3_act = (activity1Scores[act1] || 0) + (activity2Scores[act2] || 0) + (activity3Scores[act3] || 0) + (activity4Scores[act4] || 0);
-      sec3 = Math.min(s3_act + reward, 20);
+      sec3 = clampScore(s3_act + reward, 20);
     }
 
     // -------------------------------------------------------------
@@ -1178,7 +1201,7 @@ export const EvaluationFormQD4185 = () => {
       const pol = isSv ? svPolicy : classPolicy;
       const sol = isSv ? svSolidarity : classSolidarity;
       const loc = isSv ? svLocality : classLocality;
-      sec4 = Math.min((policyScores[pol] || 0) + (solidarityScores[sol] || 0) + (localityScores[loc] || 0), 25);
+      sec4 = clampScore((policyScores[pol] || 0) + (solidarityScores[sol] || 0) + (localityScores[loc] || 0), 25);
     }
 
     // -------------------------------------------------------------
@@ -1208,13 +1231,13 @@ export const EvaluationFormQD4185 = () => {
         const mgmtMap: Record<string, number> = { head: 3, deputy: 2, member: 1, none: 0 };
         score_mgmt = mgmtMap[management] || 0;
 
-        sec5 = Math.min(score_pos_perf + score_mgmt, 10);
+        sec5 = clampScore(score_pos_perf + score_mgmt, 10);
       } else {
         const part = isSv ? svClassParticipation : classClassParticipation;
         const ach = isSv ? svSpecialAchievement : classSpecialAchievement;
 
         const achMap: Record<string, number> = { national_intl: 7, provincial: 5, none: 0 };
-        sec5 = Math.min(part + (achMap[ach] || 0), 10);
+        sec5 = clampScore(part + (achMap[ach] || 0), 10);
       }
     }
 
@@ -1224,7 +1247,7 @@ export const EvaluationFormQD4185 = () => {
       sec3,
       sec4,
       sec5,
-      total: sec1 + sec2 + sec3 + sec4 + sec5
+      total: clampScore(sec1 + sec2 + sec3 + sec4 + sec5, 100)
     };
   };
 
@@ -1250,7 +1273,7 @@ export const EvaluationFormQD4185 = () => {
     if (svRewardPoints > 0 && (!uploadedFiles['sv_reward'] || uploadedFiles['sv_reward'].length === 0)) {
       return { field: 'svRewardPoints', message: 'Vui lòng tải minh chứng cho Khen thưởng hoạt động của sinh viên.' };
     }
-    if (svPolicy === 'excellent_propaganda' && (!uploadedFiles['sv_policy'] || uploadedFiles['sv_policy'].length === 0)) {
+    if (svPolicy === 'GOOD_WITH_REWARD' && (!uploadedFiles['sv_policy'] || uploadedFiles['sv_policy'].length === 0)) {
       return { field: 'svPolicy', message: 'Vui lòng tải minh chứng cho việc Tuyên truyền chính sách pháp luật đạt xuất sắc.' };
     }
     if (svSolidarity === 'excellent_achievements' && (!uploadedFiles['sv_solidarity'] || uploadedFiles['sv_solidarity'].length === 0)) {
@@ -1330,16 +1353,6 @@ export const EvaluationFormQD4185 = () => {
           deductScore: DISCIPLINE_DEDUCTION_WEIGHTS[idx],
         })).filter((violation) => violation.count > 0);
 
-        if (svNoViolationScore !== 0 && svNoViolationScore !== 25) {
-          const message = 'Điểm mục II chỉ nhập 25 nếu không vi phạm, hoặc để 0 nếu chưa có điểm.';
-          setFieldErrors({ svNoViolationScore: message });
-          setValidationError(message);
-          toast.error(message);
-          setIsSubmitting(false);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          return;
-        }
-
         // Save detailed score sections
         const saveRequests: Array<Promise<unknown>> = [
           API_Student.updateActivityScore(accessToken, currentId!, {
@@ -1357,12 +1370,10 @@ export const EvaluationFormQD4185 = () => {
           API_Student.updateRoleScore(accessToken, currentId!, rolePayload)
         ];
 
-        if (svNoViolationScore === 25 || disciplineViolations.length > 0) {
-          saveRequests.unshift(API_Student.updateDisciplineScore(accessToken, currentId!, {
-            baseScore: 25,
-            violations: disciplineViolations,
-          }));
-        }
+        saveRequests.unshift(API_Student.updateDisciplineScore(accessToken, currentId!, {
+          baseScore: Math.min(25, Math.max(0, Number(svNoViolationScore) || 0)),
+          violations: disciplineViolations,
+        }));
 
         if (
           studyPayload.regularScoreLevel ||
@@ -1407,18 +1418,16 @@ export const EvaluationFormQD4185 = () => {
 
   const handleDeductionChange = (isSv: boolean, index: number, value: number) => {
     if (!isSv) setIsClassEdited(true);
-    if (value > 0) {
-      if (isSv && svNoViolationScore === 0) {
-        setSvNoViolationScore(25);
-      }
-      if (!isSv && classNoViolationScore === 0) {
-        setClassNoViolationScore(25);
-      }
-    }
+
+    const currentBase = isSv ? svNoViolationScore : classNoViolationScore;
     const setDeductions = isSv ? setSvDeductions : setClassDeductions;
     setDeductions(prev => {
       const copy = [...prev];
-      copy[index] = Math.max(0, value);
+      const weight = deductionWeights[index] || 0;
+      const sumOther = copy.reduce((sum, count, idx) => idx === index ? sum : sum + (Number(count) || 0) * deductionWeights[idx], 0);
+      const remainingScore = Math.max(0, currentBase - sumOther);
+      const maxTimes = weight > 0 ? Math.ceil(remainingScore / weight) : 0;
+      copy[index] = Math.min(maxTimes, Math.max(0, value));
       return copy;
     });
   };

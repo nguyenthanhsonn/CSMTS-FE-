@@ -31,17 +31,40 @@ export const StudentResults = () => {
 
   const getActScoreNum = (actData: any) => {
     let total = 0;
-    if (actData.politicalActivityLevel === 'GOOD_PARTICIPATION') total += 5;
+    const politicalScores: Record<string, number> = {
+      GOOD_PARTICIPATION: 5,
+      ABSENT_ONCE: 3,
+      ABSENT_TWICE: 2,
+      ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED: 0,
+    };
+    total += politicalScores[actData.politicalActivityLevel] ?? 0;
     if (actData.cultureSportLevel === 'FULL_EFFECTIVE_PARTICIPATION') total += 5;
     if (actData.clubActivityLevel === 'FULL_EFFECTIVE_PARTICIPATION') total += 5;
     return Math.min(20, total + (actData.rewardScore || 0));
   };
 
   const getCommScoreNum = (commData: any) => {
-    let total = 0;
-    if (commData.lawComplianceLevel === 'EXCELLENT') total += 10;
+    const lawScores: Record<string, number> = {
+      GOOD_WITH_REWARD: 10,
+      GOOD: 8,
+      AVERAGE: 5,
+      VIOLATED: 0,
+      EXCELLENT: 10,
+      FAIR: 5,
+      POOR: 0,
+    };
+    const relationshipScores: Record<string, number> = {
+      GOOD: 5,
+      ONE_WARNING: 1,
+      TWO_WARNINGS: 0,
+      FAIR: 1,
+      POOR: 0,
+    };
+
+    let total = lawScores[commData.lawComplianceLevel] ?? 0;
     if (commData.volunteerActivityLevel === 'ACTIVE_WITH_REWARD') total += 10;
-    return Math.min(20, total);
+    total += relationshipScores[commData.communityRelationshipLevel] ?? 0;
+    return Math.min(25, total);
   };
 
   const getRoleScoreNum = (roleData: any) => {
@@ -110,28 +133,25 @@ export const StudentResults = () => {
             const commData = community.data || community;
             const roleData = role.data || role;
 
-            const totalScore = detailData.finalScore !== null && detailData.finalScore !== undefined 
-              ? detailData.finalScore 
-              : detailData.classScore !== null && detailData.classScore !== undefined 
-              ? detailData.classScore 
-              : detailData.studentScore;
+            const totalScore = detailData.totalScore ?? latestEval.totalScore ?? detailData.finalScore ?? detailData.classScore ?? detailData.studentScore;
+            const classification = detailData.classification ?? latestEval.classification ?? detailData.rank ?? detailData.rating;
 
             setResultData({
               semester: detailData.semester && typeof detailData.semester === 'object'
                 ? detailData.semester.semester === 'SEMESTER_1' ? 'HK1' : 'HK2'
-                : detailData.semester || 'HK1',
+                : detailData.semester || latestEval.semester || 'HK1',
               academicYear: detailData.semester && typeof detailData.semester === 'object'
                 ? `${detailData.semester.year - 1}-${detailData.semester.year}`
-                : detailData.academicYear || '2024-2025',
+                : detailData.academicYear || latestEval.academicYear || '2024-2025',
               scores: {
                 academic: studyData.regularScoreLevel ? getStudyScoreNum(studyData.regularScoreLevel, studyData.activities) : 28,
                 discipline: discData.baseScore ? discData.baseScore - getDisciplineDeduction(discData.violations) : 25,
                 politicalSocial: actData.politicalActivityLevel ? getActScoreNum(actData) : 18,
                 community: commData.lawComplianceLevel ? getCommScoreNum(commData) : 12,
                 leadership: roleData.studentRoleType ? getRoleScoreNum(roleData) : 5,
-                total: totalScore || 88,
+                total: totalScore ?? 88,
               },
-              rating: getRankText(detailData.rank || detailData.rating || 'Xuất sắc'),
+              rating: getRankText(classification || 'Xuất sắc'),
               reviewerComments: detailData.note || 'Sinh viên có ý thức rèn luyện tốt, nghiêm túc chấp hành quy chế nội quy nhà trường.',
             });
           } else {

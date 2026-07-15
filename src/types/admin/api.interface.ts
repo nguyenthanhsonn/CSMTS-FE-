@@ -112,11 +112,7 @@ export interface AdminSemester {
   semesterName?: string;
   name?: string;
   startDate: string;
-  endDate: string;
-  studentDeadline?: string | null;
-  classDeadline?: string | null;
-  facultyDeadline?: string | null;
-  isActive: boolean;
+  endDate: string;  isActive: boolean;
   hasEvaluationForms?: boolean;
 }
 
@@ -125,9 +121,6 @@ export interface SemesterPayload {
   semester?: string;
   startDate?: string;
   endDate?: string;
-  studentDeadline?: string;
-  classDeadline?: string;
-  facultyDeadline?: string;
   isActive?: boolean;
 }
 
