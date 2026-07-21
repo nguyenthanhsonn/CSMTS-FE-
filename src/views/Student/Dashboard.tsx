@@ -8,6 +8,7 @@ import type { Student } from '../../types/student';
 import { API_Student } from '../../api/API_Student';
 import { WelcomeBanner } from '../../components/student/WelcomeBanner';
 import { StatsGrid } from '../../components/student/StatsGrid';
+import EvaluationStatusStepper from '../../components/common/EvaluationStatusStepper';
 
 export const StudentDashboard = () => {
   const user = useAuthStore((state) => state.user) as Student;
@@ -381,12 +382,19 @@ export const StudentDashboard = () => {
                     key={item.id || index}
                     className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0 animate-fade-in"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-bold text-[#1A1B1E]">{semLabel}</p>
-                      <span className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeColors.bg} ${badgeColors.text}`}>
-                        {statusText}
-                      </span>
-                    </div>
+	                    <div className="min-w-0">
+	                      <p className="truncate text-xs font-bold text-[#1A1B1E]">{semLabel}</p>
+	                      <span className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeColors.bg} ${badgeColors.text}`}>
+	                        {statusText}
+	                      </span>
+	                      <EvaluationStatusStepper
+	                        status={item.status}
+	                        statusLabel={item.statusLabel}
+	                        steps={item.review?.steps}
+	                        compact
+	                        className="mt-2"
+	                      />
+	                    </div>
                     <div className="shrink-0 text-right">
                       <p className="text-2xl font-semibold text-[#1A1B1E]">{score}</p>
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold mt-1 ${rankColors.bg} ${rankColors.text}`}>{rankText}</span>

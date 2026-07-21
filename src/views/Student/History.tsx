@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Calendar, Eye, Loader2, AlertCircle } from 'lucide-react';
 import { API_Student } from '../../api/API_Student';
+import EvaluationStatusStepper from '../../components/common/EvaluationStatusStepper';
 
 export const StudentHistory = () => {
   const router = useRouter();
@@ -476,7 +477,7 @@ export const StudentHistory = () => {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2.5 border-t border-gray-100 items-center">
+	                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2.5 border-t border-gray-100 items-center">
                     <div>
                       <p className="text-[10px] text-gray-500 uppercase tracking-wide">Tổng điểm</p>
                       <p className="text-base font-bold text-gray-900 mt-0.5">{totalScore}đ</p>
@@ -487,7 +488,7 @@ export const StudentHistory = () => {
                         {getRankText(rank)}
                       </p>
 	                    </div>
-	                    <div className="flex items-center justify-end col-span-2 sm:col-span-1">
+		                    <div className="flex items-center justify-end col-span-2 sm:col-span-1">
 	                      <button
 	                        type="button"
 	                        onClick={() => router.push(`/student/evaluation?id=${item.id}`)}
@@ -496,9 +497,16 @@ export const StudentHistory = () => {
 	                        <Eye size={12} />
 	                        Xem chi tiết
 	                      </button>
-	                    </div>
-                  </div>
-                </div>
+		                    </div>
+	                  </div>
+	                  <EvaluationStatusStepper
+	                    status={item.status}
+	                    statusLabel={item.statusLabel}
+	                    steps={item.review?.steps}
+	                    compact
+	                    className="mt-3 border-t border-gray-100 pt-3"
+	                  />
+	                </div>
               );
             })}
           </div>

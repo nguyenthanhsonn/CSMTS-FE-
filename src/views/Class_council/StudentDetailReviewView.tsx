@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { API_Admin } from '@/api/API_Admin';
 import CouncilCriteriaReviewTable from '@/components/class_council/CouncilCriteriaReviewTable';
 import EvidenceReviewModal, { type ReviewEvidence } from '@/components/class_council/EvidenceReviewModal';
+import EvaluationStatusStepper from '@/components/common/EvaluationStatusStepper';
 import { useToast } from '@/components/common/ToastProvider';
 
 interface ReviewStudent {
@@ -133,6 +134,7 @@ export function StudentDetailReviewView() {
   const [approving, setApproving] = useState(false);
   const [hasEvaluation, setHasEvaluation] = useState(false);
   const [student, setStudent] = useState<ReviewStudent | null>(null);
+  const [workflow, setWorkflow] = useState<any>(null);
   const [, setIsClassEdited] = useState(false);
   const [evidences, setEvidences] = useState<ReviewEvidence[]>([]);
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false);
@@ -247,11 +249,16 @@ export function StudentDetailReviewView() {
         const listItem = list.find((item) => item.id === evaluationId);
         const studentInfo = detail.student || listItem?.student || {};
 
-        setStudent({
-          id: detail.studentId || studentInfo.id || evaluationId,
-          code: detail.studentCode || studentInfo.studentCode || studentInfo.code || detail.studentId || '-',
-          fullName: studentInfo.fullName || detail.studentName || detail.fullName || 'Sinh viên',
-        });
+	        setStudent({
+	          id: detail.studentId || studentInfo.id || evaluationId,
+	          code: detail.studentCode || studentInfo.studentCode || studentInfo.code || detail.studentId || '-',
+	          fullName: studentInfo.fullName || detail.studentName || detail.fullName || 'Sinh viên',
+	        });
+	        setWorkflow({
+	          status: detail.status,
+	          statusLabel: detail.statusLabel,
+	          steps: detail.review?.steps,
+	        });
 
         const study = detail.sections?.study || {};
         const discipline = detail.sections?.discipline || {};
@@ -524,9 +531,16 @@ export function StudentDetailReviewView() {
             Sinh viên này chưa có phiếu đã nộp hoặc dữ liệu không còn khả dụng trong lớp phụ trách.
           </p>
         </div>
-      ) : (
-        <>
-          <div className="flex flex-col gap-3 rounded-xl border border-[#E9ECEF] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+	      ) : (
+	        <>
+	          <EvaluationStatusStepper
+	            status={workflow?.status}
+	            statusLabel={workflow?.statusLabel}
+	            steps={workflow?.steps}
+	            className="rounded-xl border border-[#E9ECEF] bg-white p-4 shadow-sm"
+	          />
+
+	          <div className="flex flex-col gap-3 rounded-xl border border-[#E9ECEF] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-sm font-bold text-[#1A1B1E]">Bảng chấm chi tiết từng tiêu chí</h2>
               <p className="mt-1 text-xs text-[#868E96]">Cột Cá nhân đánh giá là điểm sinh viên đã tự chấm; Cố vấn lớp chỉ chỉnh cột Lớp/GVCN đánh giá.</p>

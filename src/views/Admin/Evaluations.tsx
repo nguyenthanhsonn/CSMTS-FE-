@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, BarChart3, CheckCircle2, Eye, Loader2, Search, ShieldCheck } from 'lucide-react';
 import { API_Admin } from '../../api/API_Admin';
+import EvaluationStatusStepper from '../../components/common/EvaluationStatusStepper';
 import { useToast } from '../../components/common/ToastProvider';
 import type { AdminClass, AdminEvaluationItem, AdminFaculty, AdminSemester } from '../../types';
 import { getUserFriendlyError, toArray } from '../../utils/adminData';
@@ -17,6 +18,7 @@ type EvaluationRow = AdminEvaluationItem & {
   classification?: string | null;
   semester?: string;
   academicYear?: string;
+  statusLabel?: string | null;
 };
 
 type PagedResult<T> = {
@@ -54,6 +56,8 @@ function mapEvaluationRow(item: any): EvaluationRow {
   const classInfo = item.class || item.studentClass || item.classInfo || item.student?.class || {};
   const faculty = item.faculty || classInfo.faculty || {};
   const classScore = item.classScore ?? item.review?.classScore ?? null;
+  const rawStatus = item.status || 'class_approved';
+  const status = classScore !== null && normalizeStatus(rawStatus) === 'submitted' ? 'class_approved' : rawStatus;
 
   return {
     ...item,
@@ -68,7 +72,8 @@ function mapEvaluationRow(item: any): EvaluationRow {
     classification: item.classification ?? item.rank ?? null,
     semester: item.semester,
     academicYear: item.academicYear,
-    status: item.status || 'class_approved',
+    status,
+    statusLabel: status === 'class_approved' ? 'Chờ quản trị viên phê duyệt' : item.statusLabel,
   };
 }
 
@@ -394,7 +399,7 @@ export function AdminEvaluations() {
                       <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${config.className}`}>{config.label}</span>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3">
+	                    <div className="mt-4 grid grid-cols-2 gap-3">
                       <div className="rounded-lg bg-[#F8F9FA] p-3">
                         <p className="text-xs font-bold uppercase text-[#868E96]">Điểm lớp</p>
                         <p className="mt-1 text-xl font-bold text-[#0B3A82]">{row.classScore ?? '—'}</p>
@@ -403,9 +408,10 @@ export function AdminEvaluations() {
                         <p className="text-xs font-bold uppercase text-[#868E96]">Xếp loại</p>
                         <p className="mt-1 text-xl font-bold text-[#495057]">{row.classification || '—'}</p>
                       </div>
-                    </div>
+	                    </div>
+	                    <EvaluationStatusStepper status={row.status} statusLabel={row.statusLabel} compact className="mt-4" />
 
-                    <div className="mt-4 grid grid-cols-2 gap-2">
+	                    <div className="mt-4 grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => openFinalizeModal(row)}
@@ -453,8 +459,9 @@ export function AdminEvaluations() {
                     <th className="border-b border-[#E9ECEF] px-4 py-4 text-left font-bold text-[#495057]">Lớp</th>
                     <th className="border-b border-[#E9ECEF] px-4 py-4 text-left font-bold text-[#495057]">Điểm (Lớp duyệt)</th>
                     <th className="border-b border-[#E9ECEF] px-4 py-4 text-left font-bold text-[#495057]">Xếp loại</th>
-                    <th className="border-b border-[#E9ECEF] px-4 py-4 text-left font-bold text-[#495057]">Trạng thái</th>
-                    <th className="border-b border-[#E9ECEF] px-4 py-4 text-left font-bold text-[#495057]">Thao tác</th>
+	                    <th className="border-b border-[#E9ECEF] px-4 py-4 text-left font-bold text-[#495057]">Trạng thái</th>
+	                    <th className="border-b border-[#E9ECEF] px-4 py-4 text-left font-bold text-[#495057]">Tiến trình</th>
+	                    <th className="border-b border-[#E9ECEF] px-4 py-4 text-left font-bold text-[#495057]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -475,10 +482,13 @@ export function AdminEvaluations() {
                         <td className="border-b border-[#E9ECEF] px-4 py-4 font-mono text-sm font-bold text-[#3B5BDB]">{row.className}</td>
                         <td className="border-b border-[#E9ECEF] px-4 py-4 font-bold text-[#1A1B1E]">{row.classScore ?? '—'}</td>
                         <td className="border-b border-[#E9ECEF] px-4 py-4 font-bold text-[#495057]">{row.classification || '—'}</td>
-                        <td className="border-b border-[#E9ECEF] px-4 py-4">
-                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${config.className}`}>{config.label}</span>
-                        </td>
-                        <td className="border-b border-[#E9ECEF] px-4 py-4">
+	                        <td className="border-b border-[#E9ECEF] px-4 py-4">
+	                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${config.className}`}>{config.label}</span>
+	                        </td>
+	                        <td className="border-b border-[#E9ECEF] px-4 py-4">
+	                          <EvaluationStatusStepper status={row.status} statusLabel={row.statusLabel} compact />
+	                        </td>
+	                        <td className="border-b border-[#E9ECEF] px-4 py-4">
                           <div className="flex flex-wrap gap-2">
                             <button
                               type="button"
@@ -504,7 +514,7 @@ export function AdminEvaluations() {
 
                   {visibleRows.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="border-b border-[#E9ECEF] px-4 py-16 text-center text-sm font-semibold text-[#868E96]">
+	                      <td colSpan={8} className="border-b border-[#E9ECEF] px-4 py-16 text-center text-sm font-semibold text-[#868E96]">
                         Không có phiếu nào đang chờ quản trị viên phê duyệt
                       </td>
                     </tr>
@@ -555,12 +565,17 @@ export function AdminEvaluations() {
             <h2 className="text-lg font-bold text-[#1A1B1E]">Phê duyệt phiếu đánh giá</h2>
             <p className="mt-1 text-sm font-medium text-[#868E96]">{selectedEvaluation.studentName} - {selectedEvaluation.className}</p>
 
-            <div className="mt-5 rounded-xl border border-[#E9ECEF] bg-[#F8F9FA] p-4">
+	            <div className="mt-5 rounded-xl border border-[#E9ECEF] bg-[#F8F9FA] p-4">
               <p className="text-xs font-bold uppercase text-[#868E96]">Điểm lớp đã duyệt</p>
               <p className="mt-1 text-3xl font-bold text-[#0B3A82]">{selectedEvaluation.classScore ?? '—'}</p>
               <p className="mt-2 text-sm font-semibold text-[#495057]">Xếp loại: {selectedEvaluation.classification || '—'}</p>
-            </div>
-            <p className="mt-3 text-sm font-medium text-[#868E96]">Admin chỉ xác nhận điểm đã được Lớp/CVHT duyệt và chuyển phiếu sang trạng thái hoàn tất.</p>
+	            </div>
+	            <EvaluationStatusStepper
+	              status={selectedEvaluation.status}
+	              statusLabel={selectedEvaluation.statusLabel}
+	              className="mt-4 rounded-xl border border-[#E9ECEF] bg-[#F8F9FA] p-4"
+	            />
+	            <p className="mt-3 text-sm font-medium text-[#868E96]">Admin chỉ xác nhận điểm đã được Lớp/CVHT duyệt và chuyển phiếu sang trạng thái hoàn tất.</p>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button

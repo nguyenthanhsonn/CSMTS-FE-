@@ -14,6 +14,7 @@ import { API_Student } from '../../api/API_Student';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { uploadEvidenceFile } from '../../services/cloudinaryUpload';
 import { useToast } from '../../components/common/ToastProvider';
+import EvaluationStatusStepper from '../../components/common/EvaluationStatusStepper';
 
 // Sub-components
 import { EvaluationTableGrid } from '../../components/student/EvaluationTableGrid';
@@ -48,6 +49,7 @@ export const EvaluationFormQD4185 = () => {
 	  const [isLocked, setIsLocked] = useState(false);
 	  const [alreadyEvaluated, setAlreadyEvaluated] = useState(false);
   const [evaluationId, setEvaluationId] = useState<string | null>(null);
+  const [evaluationWorkflow, setEvaluationWorkflow] = useState<any>(null);
   const [note, setNote] = useState<string>('');
 
   // Simulating user role switcher for testing purposes
@@ -636,8 +638,9 @@ export const EvaluationFormQD4185 = () => {
     setClassManagementLevel('none');
     setClassClassParticipation(0);
     setClassSpecialAchievement('none');
-    setNote('');
-    setIsClassEdited(false);
+	    setNote('');
+	    setEvaluationWorkflow(null);
+	    setIsClassEdited(false);
     setIsSvViolationSec1(false);
     setIsSvViolationSec2(false);
     setIsSvViolationSec3(false);
@@ -663,8 +666,13 @@ export const EvaluationFormQD4185 = () => {
 	      if (detailSemester) setSemester(normalizeSemesterCode(detailSemester));
       const detailAcademicYear = typeof detail.semester === 'object' ? detail.semester.academicYear || `${detail.semester.year}-${detail.semester.year + 1}` : detail.academicYear;
       if (detailAcademicYear) setAcademicYear(detailAcademicYear);
-      if (detail.semesterId || detail.semester?.id) setSelectedSemesterId(detail.semesterId || detail.semester.id);
-      applyEvaluationLockState(detail);
+	      if (detail.semesterId || detail.semester?.id) setSelectedSemesterId(detail.semesterId || detail.semester.id);
+	      setEvaluationWorkflow({
+	        status: detail.status,
+	        statusLabel: detail.statusLabel,
+	        steps: detail.review?.steps,
+	      });
+	      applyEvaluationLockState(detail);
 
       const studyData = detail.sections?.study || {};
       const discData = detail.sections?.discipline || {};
@@ -848,8 +856,13 @@ export const EvaluationFormQD4185 = () => {
 	    });
 	  };
 
-	  const openExistingEvaluation = async (match: any, accessToken: string | null) => {
-    applyEvaluationLockState(match);
+		  const openExistingEvaluation = async (match: any, accessToken: string | null) => {
+	    setEvaluationWorkflow({
+	      status: match.status,
+	      statusLabel: match.statusLabel,
+	      steps: match.review?.steps,
+	    });
+	    applyEvaluationLockState(match);
 
     if (accessToken && accessToken !== 'mock-access-token') {
       setLoading(true);
@@ -926,10 +939,15 @@ export const EvaluationFormQD4185 = () => {
     if (accessToken && accessToken !== 'mock-access-token') {
       try {
         setLoading(true);
-	        const newEvalRes = await API_Student.createEvaluation(accessToken, targetSem, targetYear);
-	        const newEval = newEvalRes.data || newEvalRes;
-	        setEvaluationId(newEval.id);
-	        applyEvaluationLockState({
+		        const newEvalRes = await API_Student.createEvaluation(accessToken, targetSem, targetYear);
+		        const newEval = (newEvalRes.data || newEvalRes) as any;
+		        setEvaluationId(newEval.id);
+		        setEvaluationWorkflow({
+		          status: newEval.status || 'DRAFT',
+		          statusLabel: newEval.statusLabel,
+		          steps: newEval.review?.steps,
+		        });
+		        applyEvaluationLockState({
 	          ...newEval,
 	          status: newEval.status || 'DRAFT',
 	          isLocked: newEval.isLocked ?? false,
@@ -1622,14 +1640,21 @@ export const EvaluationFormQD4185 = () => {
             </div>
           </div>
 
-          {alreadyEvaluated && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800">
-              <Info className="shrink-0 mt-0.5 text-amber-600" />
-              <p className="text-sm font-bold">Học kỳ này đã đánh giá</p>
-            </div>
-          )}
+	          {alreadyEvaluated && (
+	            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800">
+	              <Info className="shrink-0 mt-0.5 text-amber-600" />
+	              <p className="text-sm font-bold">Học kỳ này đã đánh giá</p>
+	            </div>
+	          )}
 
-          <EvaluationTableGrid
+	          <EvaluationStatusStepper
+	            status={evaluationWorkflow?.status}
+	            statusLabel={evaluationWorkflow?.statusLabel}
+	            steps={evaluationWorkflow?.steps}
+	            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+	          />
+
+	          <EvaluationTableGrid
             currentUserRole={currentUserRole}
             setIsClassEdited={setIsClassEdited}
             isReadOnly={isReadOnly}
