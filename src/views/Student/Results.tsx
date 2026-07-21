@@ -117,21 +117,13 @@ export const StudentResults = () => {
           // Use the latest evaluation record (first in the list)
           const latestEval = evaluations[0];
           if (latestEval) {
-            const [detail, study, discipline, activity, community, role] = await Promise.all([
-              API_Student.getEvaluationDetail(accessToken, latestEval.id),
-              API_Student.getStudyScore(accessToken, latestEval.id),
-              API_Student.getDisciplineScore(accessToken, latestEval.id),
-              API_Student.getActivityScore(accessToken, latestEval.id),
-              API_Student.getCommunityScore(accessToken, latestEval.id),
-              API_Student.getRoleScore(accessToken, latestEval.id),
-            ]);
-
-            const detailData = detail.data || detail;
-            const studyData = study.data || study;
-            const discData = discipline.data || discipline;
-            const actData = activity.data || activity;
-            const commData = community.data || community;
-            const roleData = role.data || role;
+            const detail = await API_Student.getEvaluationDetail(accessToken, latestEval.id);
+            const detailData = (detail.data || detail) as any;
+            const studyData = detailData.sections?.study || {};
+            const discData = detailData.sections?.discipline || {};
+            const actData = detailData.sections?.activity || {};
+            const commData = detailData.sections?.community || {};
+            const roleData = detailData.sections?.role || {};
 
             const totalScore = detailData.totalScore ?? latestEval.totalScore ?? detailData.finalScore ?? detailData.classScore ?? detailData.studentScore;
             const classification = detailData.classification ?? latestEval.classification ?? detailData.rank ?? detailData.rating;
@@ -144,11 +136,11 @@ export const StudentResults = () => {
                 ? `${detailData.semester.year - 1}-${detailData.semester.year}`
                 : detailData.academicYear || latestEval.academicYear || '2024-2025',
               scores: {
-                academic: studyData.regularScoreLevel ? getStudyScoreNum(studyData.regularScoreLevel, studyData.activities) : 28,
-                discipline: discData.baseScore ? discData.baseScore - getDisciplineDeduction(discData.violations) : 25,
-                politicalSocial: actData.politicalActivityLevel ? getActScoreNum(actData) : 18,
-                community: commData.lawComplianceLevel ? getCommScoreNum(commData) : 12,
-                leadership: roleData.studentRoleType ? getRoleScoreNum(roleData) : 5,
+                academic: detailData.sectionScores?.studyScore ?? studyData.score ?? getStudyScoreNum(studyData.regularScoreLevel, studyData.activities || []),
+                discipline: detailData.sectionScores?.disciplineScore ?? discData.score ?? Math.max(0, (discData.baseScore || 0) - getDisciplineDeduction(discData.violations || [])),
+                politicalSocial: detailData.sectionScores?.activityScore ?? actData.score ?? getActScoreNum(actData),
+                community: detailData.sectionScores?.communityScore ?? commData.score ?? getCommScoreNum(commData),
+                leadership: detailData.sectionScores?.roleScore ?? roleData.score ?? getRoleScoreNum(roleData),
                 total: totalScore ?? 88,
               },
               rating: getRankText(classification || 'Xuất sắc'),

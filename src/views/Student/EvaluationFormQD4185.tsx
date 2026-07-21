@@ -664,21 +664,13 @@ export const EvaluationFormQD4185 = () => {
       const detailAcademicYear = typeof detail.semester === 'object' ? detail.semester.academicYear || `${detail.semester.year}-${detail.semester.year + 1}` : detail.academicYear;
       if (detailAcademicYear) setAcademicYear(detailAcademicYear);
       if (detail.semesterId || detail.semester?.id) setSelectedSemesterId(detail.semesterId || detail.semester.id);
-	      applyEvaluationLockState(detail);
-      // Fetch score details
-      const [study, discipline, activity, community, role] = await Promise.all([
-        API_Student.getStudyScore(accessToken, targetId),
-        API_Student.getDisciplineScore(accessToken, targetId),
-        API_Student.getActivityScore(accessToken, targetId),
-        API_Student.getCommunityScore(accessToken, targetId),
-        API_Student.getRoleScore(accessToken, targetId),
-      ]);
+      applyEvaluationLockState(detail);
 
-      const studyData = study.data || study;
-      const discData = discipline.data || discipline;
-      const actData = activity.data || activity;
-      const commData = community.data || community;
-      const roleData = role.data || role;
+      const studyData = detail.sections?.study || {};
+      const discData = detail.sections?.discipline || {};
+      const actData = detail.sections?.activity || {};
+      const commData = detail.sections?.community || {};
+      const roleData = detail.sections?.role || {};
 
       if (studyData.regularScoreLevel) setSvStudyAttitude(reverseMapStudyAttitude(studyData.regularScoreLevel));
       if (studyData.academicRank) setSvAcademicRank(reverseMapAcademicRank(studyData.academicRank));
@@ -691,7 +683,8 @@ export const EvaluationFormQD4185 = () => {
       const disciplineViolations = Array.isArray(discData.violations) ? discData.violations : [];
 
       if (discData.baseScore !== undefined) {
-        setSvNoViolationScore(Math.min(25, Math.max(0, Number(discData.baseScore) || 0)));
+        const hasDisciplineInput = Number(discData.score) > 0 || disciplineViolations.length > 0;
+        setSvNoViolationScore(hasDisciplineInput ? Math.min(25, Math.max(0, Number(discData.baseScore) || 0)) : 0);
       }
       if (discData.violations) {
         const dec = [0, 0, 0, 0, 0, 0, 0, 0, 0];

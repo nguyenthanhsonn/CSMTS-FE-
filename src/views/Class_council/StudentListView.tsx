@@ -100,10 +100,18 @@ export function StudentListView() {
 
       try {
         setLoading(true);
-        const studentsResult = await API_Admin.getClassStudents(classId);
+        const [classDetailResult, studentsResult] = await Promise.all([
+          API_Admin.getClassCouncilClassById(classId),
+          API_Admin.getClassStudents(classId),
+        ]);
 
         if (!mounted) {
           return;
+        }
+
+        const classDetail = (classDetailResult as any)?.data || classDetailResult;
+        if (classDetail?.name || classDetail?.code) {
+          setClassName(classDetail.name || classDetail.code);
         }
 
         const classStudents = toArray<any>(studentsResult);

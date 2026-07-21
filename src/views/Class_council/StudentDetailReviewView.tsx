@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, FileText, Loader2, Paperclip, Send } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import { API_Admin } from '@/api/API_Admin';
 import CouncilCriteriaReviewTable from '@/components/class_council/CouncilCriteriaReviewTable';
 import EvidenceReviewModal, { type ReviewEvidence } from '@/components/class_council/EvidenceReviewModal';
+import { useToast } from '@/components/common/ToastProvider';
 
 interface ReviewStudent {
   id: string;
@@ -12,42 +14,127 @@ interface ReviewStudent {
   fullName: string;
 }
 
-const mockStudents: Record<string, ReviewStudent> = {
-  sv001: { id: 'sv001', code: '2251120001', fullName: 'Nguyễn An Bình' },
-  sv002: { id: 'sv002', code: '2251120002', fullName: 'Trần Minh Châu' },
-  sv004: { id: 'sv004', code: '2251120004', fullName: 'Phạm Hoàng Gia Hân' },
-  sv005: { id: 'sv005', code: '2251120005', fullName: 'Võ Nhật Khang' },
-  sv101: { id: 'sv101', code: '2251120101', fullName: 'Đỗ Thanh Mai' },
+const getParam = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value ?? '');
+
+const DISCIPLINE_VIOLATION_CODES = [
+  'MISSED_CITIZEN_WEEK_FULL',
+  'ABSENT_CITIZEN_WEEK_SESSION',
+  'ABSENT_CLASS_MEETING',
+  'VIOLATED_DRESS_CODE',
+  'VIOLATED_CAMPUS_RULES',
+  'LATE_FEE_PAYMENT',
+  'EXAM_REPRIMAND',
+  'EXAM_VIOLATION_WARNING',
+  'EXAM_VIOLATION_SUSPENSION',
+] as const;
+
+function unwrapData<T = any>(value: any): T {
+  return (value?.data || value) as T;
+}
+
+function toArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === 'object' && Array.isArray((value as { items?: unknown }).items)) {
+    return (value as { items: T[] }).items;
+  }
+  return [];
+}
+
+const reverseMapStudyAttitude = (value?: string | null) => {
+  const map: Record<string, string> = {
+    GTE_9: 'very_good',
+    FROM_7_TO_UNDER_9: 'good',
+    FROM_5_TO_UNDER_7: 'fair',
+    FROM_4_TO_UNDER_5: 'average',
+    FROM_1_TO_UNDER_4: 'poor',
+  };
+  return value ? map[value] || 'none' : 'none';
 };
 
-const mockEvidences: ReviewEvidence[] = [
-  {
-    id: 'ev-1',
-    fileName: 'xac-nhan-khong-vi-pham.pdf',
-    fileType: 'pdf',
-    url: 'https://example.com/xac-nhan-khong-vi-pham.pdf',
-    status: 'pending',
-  },
-  {
-    id: 'ev-2',
-    fileName: 'anh-hoat-dong-doan.jpg',
-    fileType: 'image',
-    url: 'https://example.com/anh-hoat-dong-doan.jpg',
-    status: 'pending',
-  },
-];
+const reverseMapAcademicRank = (value?: string | null) => String(value || 'none').toLowerCase();
 
-const getParam = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value ?? '');
+const reverseMapActivity2 = (value?: string | null) => {
+  const map: Record<string, string> = {
+    FULL_EFFECTIVE_PARTICIPATION: 'many',
+    EFFECTIVE_PARTICIPATION_FROM_HALF: 'some',
+    ENCOURAGED_OTHERS: 'active',
+    ABSENT_OVER_HALF: 'full',
+    NOT_PARTICIPATED: 'none',
+  };
+  return value ? map[value] || 'none' : 'none';
+};
+
+const reverseMapActivity3 = (value?: string | null) => {
+  const map: Record<string, string> = {
+    FULL_EFFECTIVE_PARTICIPATION: 'prize_or_org',
+    ACTIVE_ONE_OR_MORE: 'active',
+    ACTIVE_SUPPORTER: 'some',
+    ABSENT_OVER_HALF: 'full',
+    NOT_PARTICIPATED: 'none',
+  };
+  return value ? map[value] || 'none' : 'none';
+};
+
+const reverseMapActivity4 = (value?: string | null) => {
+  const map: Record<string, string> = {
+    MULTIPLE_ACTIVITIES_OR_REPORTING: 'active',
+    ONE_EFFECTIVE_ACTIVITY: 'full',
+    AWARENESS_OR_SUPPORT: 'some',
+    REMINDED_VIOLATION: 'none',
+  };
+  return value ? map[value] || 'none' : 'none';
+};
+
+const reverseMapSolidarity = (value?: string | null) => {
+  const map: Record<string, string> = {
+    ACTIVE_WITH_REWARD: 'excellent_achievements',
+    ACTIVE: 'regular',
+    PARTICIPATED: 'some',
+    NOT_PARTICIPATED: 'none',
+  };
+  return value ? map[value] || 'none' : 'none';
+};
+
+const reverseMapCadrePerformance = (value?: string | null) => {
+  const map: Record<string, string> = {
+    EXCELLENT: 'excellent',
+    GOOD: 'good',
+    FAIR: 'average',
+    POOR: 'unsatisfactory',
+  };
+  return value ? map[value] || 'unsatisfactory' : 'unsatisfactory';
+};
+
+const reverseMapManagementLevel = (value?: string | null) => {
+  const map: Record<string, string> = {
+    HEAD_POSITION: 'head',
+    DEPUTY_POSITION: 'deputy',
+    MEMBER_POSITION: 'member',
+  };
+  return value ? map[value] || 'none' : 'none';
+};
+
+const reverseMapSpecialAchievement = (value?: string | null) => {
+  const map: Record<string, string> = {
+    NATIONAL_OR_INTL: 'national_intl',
+    PROVINCIAL_LEVEL: 'provincial',
+    NONE: 'none',
+  };
+  return value ? map[value] || 'none' : 'none';
+};
 
 export function StudentDetailReviewView() {
   const router = useRouter();
   const params = useParams();
+  const toast = useToast();
   const classId = getParam(params.classId);
-  const studentId = getParam(params.studentId);
+  const evaluationId = getParam(params.studentId);
   const [loading, setLoading] = useState(true);
+  const [approving, setApproving] = useState(false);
   const [hasEvaluation, setHasEvaluation] = useState(false);
+  const [student, setStudent] = useState<ReviewStudent | null>(null);
   const [, setIsClassEdited] = useState(false);
-  const [evidences, setEvidences] = useState<ReviewEvidence[]>(mockEvidences);
+  const [evidences, setEvidences] = useState<ReviewEvidence[]>([]);
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false);
   const [isSuspended, setIsSuspended] = useState(false);
   const [isSubmittedLate, setIsSubmittedLate] = useState(false);
@@ -63,54 +150,52 @@ export function StudentDetailReviewView() {
   const [isSvViolationSec5, setIsSvViolationSec5] = useState(false);
   const [isClassViolationSec5, setIsClassViolationSec5] = useState(false);
 
-  const [svStudyAttitude, setSvStudyAttitude] = useState('good');
-  const [svNckh, setSvNckh] = useState(true);
+  const [svStudyAttitude, setSvStudyAttitude] = useState('none');
+  const [svNckh, setSvNckh] = useState(false);
   const [svOlympic, setSvOlympic] = useState(false);
-  const [svCreative, setSvCreative] = useState(true);
-  const [svAcademicRank, setSvAcademicRank] = useState('good');
-  const [classStudyAttitude, setClassStudyAttitude] = useState('good');
-  const [classNckh, setClassNckh] = useState(true);
+  const [svCreative, setSvCreative] = useState(false);
+  const [svAcademicRank, setSvAcademicRank] = useState('none');
+  const [classStudyAttitude, setClassStudyAttitude] = useState('none');
+  const [classNckh, setClassNckh] = useState(false);
   const [classOlympic, setClassOlympic] = useState(false);
-  const [classCreative, setClassCreative] = useState(true);
-  const [classAcademicRank, setClassAcademicRank] = useState('good');
+  const [classCreative, setClassCreative] = useState(false);
+  const [classAcademicRank, setClassAcademicRank] = useState('none');
 
-  const [svNoViolationScore, setSvNoViolationScore] = useState(25);
-  const [svDeductions, setSvDeductions] = useState([0, 1, 0, 0, 0, 0, 0, 0, 0]);
-  const [classNoViolationScore, setClassNoViolationScore] = useState(25);
-  const [classDeductions, setClassDeductions] = useState([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+  const [svNoViolationScore, setSvNoViolationScore] = useState(0);
+  const [svDeductions, setSvDeductions] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  const [classNoViolationScore, setClassNoViolationScore] = useState(0);
+  const [classDeductions, setClassDeductions] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   const [svActivity1, setSvActivity1] = useState('GOOD_PARTICIPATION');
-  const [svActivity2, setSvActivity2] = useState('some');
-  const [svActivity3, setSvActivity3] = useState('active');
-  const [svActivity4, setSvActivity4] = useState('active');
-  const [svRewardPoints, setSvRewardPoints] = useState(1);
+  const [svActivity2, setSvActivity2] = useState('none');
+  const [svActivity3, setSvActivity3] = useState('none');
+  const [svActivity4, setSvActivity4] = useState('none');
+  const [svRewardPoints, setSvRewardPoints] = useState(0);
   const [classActivity1, setClassActivity1] = useState('GOOD_PARTICIPATION');
-  const [classActivity2, setClassActivity2] = useState('some');
-  const [classActivity3, setClassActivity3] = useState('active');
-  const [classActivity4, setClassActivity4] = useState('active');
-  const [classRewardPoints, setClassRewardPoints] = useState(1);
+  const [classActivity2, setClassActivity2] = useState('none');
+  const [classActivity3, setClassActivity3] = useState('none');
+  const [classActivity4, setClassActivity4] = useState('none');
+  const [classRewardPoints, setClassRewardPoints] = useState(0);
 
   const [svPolicy, setSvPolicy] = useState('GOOD');
-  const [svSolidarity, setSvSolidarity] = useState('regular');
+  const [svSolidarity, setSvSolidarity] = useState('none');
   const [svLocality, setSvLocality] = useState('GOOD');
   const [classPolicy, setClassPolicy] = useState('GOOD');
-  const [classSolidarity, setClassSolidarity] = useState('regular');
+  const [classSolidarity, setClassSolidarity] = useState('none');
   const [classLocality, setClassLocality] = useState('GOOD');
 
   const [svRoleType, setSvRoleType] = useState<'cadre' | 'student'>('student');
   const [svCadrePosition, setSvCadrePosition] = useState<'a1' | 'a2'>('a2');
-  const [svCadrePerformance, setSvCadrePerformance] = useState('good');
+  const [svCadrePerformance, setSvCadrePerformance] = useState('unsatisfactory');
   const [svManagementLevel, setSvManagementLevel] = useState('none');
-  const [svClassParticipation, setSvClassParticipation] = useState(2);
-  const [svSpecialAchievement, setSvSpecialAchievement] = useState('provincial');
+  const [svClassParticipation, setSvClassParticipation] = useState(0);
+  const [svSpecialAchievement, setSvSpecialAchievement] = useState('none');
   const [classRoleType, setClassRoleType] = useState<'cadre' | 'student'>('student');
   const [classCadrePosition, setClassCadrePosition] = useState<'a1' | 'a2'>('a2');
-  const [classCadrePerformance, setClassCadrePerformance] = useState('good');
+  const [classCadrePerformance, setClassCadrePerformance] = useState('unsatisfactory');
   const [classManagementLevel, setClassManagementLevel] = useState('none');
-  const [classClassParticipation, setClassClassParticipation] = useState(2);
-  const [classSpecialAchievement, setClassSpecialAchievement] = useState('provincial');
-
-  const student = useMemo(() => mockStudents[studentId], [studentId]);
+  const [classClassParticipation, setClassClassParticipation] = useState(0);
+  const [classSpecialAchievement, setClassSpecialAchievement] = useState('none');
 
   const deductionWeights = useMemo(() => [10, 3, 5, 5, 5, 5, 5, 10, 20], []);
   const deductionLabels = useMemo(() => [
@@ -138,14 +223,140 @@ export function StudentDetailReviewView() {
   }), []);
 
   useEffect(() => {
-    // TODO: nối API lấy chi tiết phiếu tự đánh giá của sinh viên và điểm từng tiêu chí con.
-    setLoading(true);
-    const timer = window.setTimeout(() => {
-      setHasEvaluation(!!student);
-      setLoading(false);
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [student]);
+    let mounted = true;
+
+    const loadEvaluationDetail = async () => {
+      if (!evaluationId || !classId) {
+        setStudent(null);
+        setHasEvaluation(false);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const [detailResult, listResult] = await Promise.all([
+          API_Admin.getEvaluationDetail(evaluationId),
+          API_Admin.getAdminEvaluationList({ classId, page: 1, limit: 100 }),
+        ]);
+
+        if (!mounted) return;
+
+        const detail = unwrapData<any>(detailResult);
+        const list = toArray<any>(unwrapData<any>(listResult));
+        const listItem = list.find((item) => item.id === evaluationId);
+        const studentInfo = detail.student || listItem?.student || {};
+
+        setStudent({
+          id: detail.studentId || studentInfo.id || evaluationId,
+          code: detail.studentCode || studentInfo.studentCode || studentInfo.code || detail.studentId || '-',
+          fullName: studentInfo.fullName || detail.studentName || detail.fullName || 'Sinh viên',
+        });
+
+        const study = detail.sections?.study || {};
+        const discipline = detail.sections?.discipline || {};
+        const activity = detail.sections?.activity || {};
+        const community = detail.sections?.community || {};
+        const role = detail.sections?.role || {};
+
+        setSvStudyAttitude(reverseMapStudyAttitude(study.regularScoreLevel));
+        setClassStudyAttitude(reverseMapStudyAttitude(study.regularScoreLevel));
+        setSvAcademicRank(reverseMapAcademicRank(study.academicRank));
+        setClassAcademicRank(reverseMapAcademicRank(study.academicRank));
+
+        const activities = Array.isArray(study.activities) ? study.activities : [];
+        const hasAcademicEvent = activities.some((item: any) => item.code === 'ACADEMIC_EVENT_PARTICIPATION' && item.checked !== false);
+        const hasPublication = activities.some((item: any) => item.code === 'SCIENTIFIC_PUBLICATION_OR_CONTEST' && item.checked !== false);
+        const hasAward = activities.some((item: any) => item.code === 'SCIENTIFIC_AWARD' && item.checked !== false);
+        setSvNckh(hasAcademicEvent);
+        setClassNckh(hasAcademicEvent);
+        setSvOlympic(hasPublication);
+        setClassOlympic(hasPublication);
+        setSvCreative(hasAward);
+        setClassCreative(hasAward);
+
+        const violations = Array.isArray(discipline.violations) ? discipline.violations : [];
+        const deductionCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        violations.forEach((violation: any) => {
+          const codeIndex = (DISCIPLINE_VIOLATION_CODES as readonly string[]).indexOf(violation.code);
+          const legacyIndex = String(violation.code || '').startsWith('DEDUCT_')
+            ? parseInt(String(violation.code).replace('DEDUCT_', ''), 10) - 1
+            : -1;
+          const weightIndex = deductionWeights.findIndex((weight) => weight === Number(violation.deductScore));
+          const index = codeIndex >= 0 ? codeIndex : legacyIndex >= 0 ? legacyIndex : weightIndex;
+
+          if (index >= 0 && index < deductionCounts.length) {
+            deductionCounts[index] = Number(violation.count) || 0;
+          }
+        });
+        const hasDisciplineInput = Number(discipline.score) > 0 || violations.length > 0;
+        const baseScore = hasDisciplineInput ? Math.min(25, Math.max(0, Number(discipline.baseScore) || 0)) : 0;
+        setSvNoViolationScore(baseScore);
+        setClassNoViolationScore(baseScore);
+        setSvDeductions(deductionCounts);
+        setClassDeductions(deductionCounts);
+
+        setSvActivity1(activity.politicalActivityLevel || 'ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED');
+        setClassActivity1(activity.politicalActivityLevel || 'ABSENT_MORE_THAN_TWICE_OR_NOT_PARTICIPATED');
+        setSvActivity2(reverseMapActivity2(activity.cultureSportLevel));
+        setClassActivity2(reverseMapActivity2(activity.cultureSportLevel));
+        setSvActivity3(reverseMapActivity3(activity.clubActivityLevel));
+        setClassActivity3(reverseMapActivity3(activity.clubActivityLevel));
+        setSvActivity4(reverseMapActivity4(activity.socialPreventionLevel));
+        setClassActivity4(reverseMapActivity4(activity.socialPreventionLevel));
+        setSvRewardPoints(Number(activity.rewardScore) || 0);
+        setClassRewardPoints(Number(activity.rewardScore) || 0);
+
+        setSvPolicy(community.lawComplianceLevel || 'VIOLATED');
+        setClassPolicy(community.lawComplianceLevel || 'VIOLATED');
+        setSvSolidarity(reverseMapSolidarity(community.volunteerActivityLevel));
+        setClassSolidarity(reverseMapSolidarity(community.volunteerActivityLevel));
+        setSvLocality(community.communityRelationshipLevel || 'TWO_WARNINGS');
+        setClassLocality(community.communityRelationshipLevel || 'TWO_WARNINGS');
+
+        const isClassOfficer = role.studentRoleType === 'CLASS_OFFICER';
+        setSvRoleType(isClassOfficer ? 'cadre' : 'student');
+        setClassRoleType(isClassOfficer ? 'cadre' : 'student');
+        const position = role.positionGroup === 'LEADER_GROUP' ? 'a1' : 'a2';
+        setSvCadrePosition(position);
+        setClassCadrePosition(position);
+        setSvCadrePerformance(reverseMapCadrePerformance(role.taskCompletionLevel));
+        setClassCadrePerformance(reverseMapCadrePerformance(role.taskCompletionLevel));
+        setSvManagementLevel(reverseMapManagementLevel(role.managementSkillLevel));
+        setClassManagementLevel(reverseMapManagementLevel(role.managementSkillLevel));
+        setSvClassParticipation(Number(role.normalStudentActivityScore) || 0);
+        setClassClassParticipation(Number(role.normalStudentActivityScore) || 0);
+        setSvSpecialAchievement(reverseMapSpecialAchievement(role.specialAchievementLevel));
+        setClassSpecialAchievement(reverseMapSpecialAchievement(role.specialAchievementLevel));
+
+        const evidenceItems = Array.isArray(detail.evidences) ? detail.evidences : [];
+        setEvidences(
+          evidenceItems.map((evidence: any) => ({
+            id: evidence.id,
+            fileName: evidence.fileName || evidence.originalName || evidence.publicId || 'Minh chứng',
+            fileType: String(evidence.mimeType || evidence.fileType || evidence.imageUrl || '').includes('pdf') ? 'pdf' : 'image',
+            url: evidence.url || evidence.imageUrl || evidence.storageKey || '#',
+            status: evidence.status || 'pending',
+          }))
+        );
+
+        setHasEvaluation(true);
+      } catch (error: any) {
+        if (!mounted) return;
+        setStudent(null);
+        setHasEvaluation(false);
+        toast.error(error?.message || 'Không tải được phiếu đánh giá.');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadEvaluationDetail();
+
+    return () => {
+      mounted = false;
+    };
+  }, [classId, deductionWeights, evaluationId, toast]);
 
   const clampScore = (value: number, max: number) => Math.min(max, Math.max(0, Number.isFinite(value) ? value : 0));
 
@@ -214,12 +425,15 @@ export function StudentDetailReviewView() {
   const svScores = calculateTotalPoints(true);
   const classScores = calculateTotalPoints(false);
 
-  const uploadedFiles = useMemo<Record<string, string[]>>(() => ({
-    sv_nckh: ['xac-nhan-nckh.pdf'],
-    sv_creative: ['clb-hoc-thuat.jpg'],
-    sv_reward: ['giay-khen-doan-truong.pdf'],
-    sv_special_ach: ['giai-thuong-cap-tinh.pdf'],
-  }), []);
+  const uploadedFiles = useMemo<Record<string, string[]>>(() => {
+    if (evidences.length === 0) {
+      return {} as Record<string, string[]>;
+    }
+
+    return {
+      sv_nckh: evidences.map((evidence) => evidence.fileName),
+    };
+  }, [evidences]);
 
   const handleDeductionChange = (isSv: boolean, index: number, value: number) => {
     const baseScore = isSv ? svNoViolationScore : classNoViolationScore;
@@ -247,9 +461,25 @@ export function StudentDetailReviewView() {
     );
   };
 
-  const handleApprove = () => {
-    // TODO: nối API duyệt phiếu điểm rèn luyện của sinh viên với chi tiết điểm từng tiêu chí con.
-    router.push(`/class_council/${classId}`);
+  const handleApprove = async () => {
+    if (!evaluationId) {
+      toast.error('Không tìm thấy phiếu đánh giá.');
+      return;
+    }
+
+    try {
+      setApproving(true);
+      await API_Admin.reviewEvaluation(evaluationId, {
+        action: 'approve',
+        classScore: Math.round(classScores.total),
+      });
+      toast.success('Đã gửi phiếu lên Admin.');
+      router.push(`/class_council/${classId}`);
+    } catch (error: any) {
+      toast.error(error?.message || 'Không gửi được phiếu lên Admin.');
+    } finally {
+      setApproving(false);
+    }
   };
 
   return (
@@ -265,7 +495,7 @@ export function StudentDetailReviewView() {
             Quay lại danh sách sinh viên
           </button>
           <h1 className="ui-page-title">{student?.fullName ?? 'Sinh viên'}</h1>
-          <p className="mt-1 text-sm text-[#868E96]">Mã SV: {student?.code ?? studentId}</p>
+          <p className="mt-1 text-sm text-[#868E96]">Mã SV: {student?.code ?? evaluationId}</p>
         </div>
         {!loading && hasEvaluation && (
           <div className="grid grid-cols-2 gap-3 sm:min-w-[260px]">
@@ -452,10 +682,11 @@ export function StudentDetailReviewView() {
             <button
               type="button"
               onClick={handleApprove}
-              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] shadow-sm min-h-[44px]"
+              disabled={approving}
+              className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Send size={15} />
-              Gửi phê duyệt
+              {approving ? <Loader2 className="animate-spin" size={15} /> : <Send size={15} />}
+              {approving ? 'Đang gửi...' : 'Gửi phê duyệt'}
             </button>
           </div>
         </>

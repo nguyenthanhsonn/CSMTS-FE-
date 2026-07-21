@@ -4,8 +4,6 @@ import type {
   AcademicYear,
   Class,
   CreateEvaluationPayload,
-  EvaluationStatusResponse,
-  EvaluationSummary,
   Faculty,
   LinkEvidenceUrlPayload,
   Major,
@@ -101,29 +99,9 @@ async function updateEvaluationNote(
   return patch<StudentEvaluation>(`/training-evaluations/${id}`, data);
 }
 
-/** Lấy tổng hợp điểm của phiếu. */
-async function getEvaluationSummary(id: string) {
-  return get<EvaluationSummary>(`/training-evaluations/${id}/summary`);
-}
-
-/** Lấy trạng thái phiếu đánh giá. */
-async function getEvaluationStatus(id: string) {
-  return get<EvaluationStatusResponse>(`/training-evaluations/${id}/status`);
-}
-
-/** Lấy điểm học tập. */
-async function getStudyScore(_accessTokenOrId: string, id?: string) {
-  return getScoreSection(id || _accessTokenOrId, 'study-score');
-}
-
 /** Cập nhật điểm học tập. */
 async function updateStudyScore(_accessTokenOrId: string, idOrPayload: string | ScoreSectionPayload, payload?: ScoreSectionPayload) {
   return updateScoreSection(_accessTokenOrId, idOrPayload, payload, 'study-score');
-}
-
-/** Lấy điểm chấp hành nội quy. */
-async function getDisciplineScore(_accessTokenOrId: string, id?: string) {
-  return getScoreSection(id || _accessTokenOrId, 'discipline-score');
 }
 
 /** Cập nhật điểm chấp hành nội quy. */
@@ -135,19 +113,9 @@ async function updateDisciplineScore(
   return updateScoreSection(_accessTokenOrId, idOrPayload, payload, 'discipline-score');
 }
 
-/** Lấy điểm hoạt động. */
-async function getActivityScore(_accessTokenOrId: string, id?: string) {
-  return getScoreSection(id || _accessTokenOrId, 'activity-score');
-}
-
 /** Cập nhật điểm hoạt động. */
 async function updateActivityScore(_accessTokenOrId: string, idOrPayload: string | ScoreSectionPayload, payload?: ScoreSectionPayload) {
   return updateScoreSection(_accessTokenOrId, idOrPayload, payload, 'activity-score');
-}
-
-/** Lấy điểm ý thức cộng đồng. */
-async function getCommunityScore(_accessTokenOrId: string, id?: string) {
-  return getScoreSection(id || _accessTokenOrId, 'community-score');
 }
 
 /** Cập nhật điểm ý thức cộng đồng. */
@@ -157,11 +125,6 @@ async function updateCommunityScore(
   payload?: ScoreSectionPayload
 ) {
   return updateScoreSection(_accessTokenOrId, idOrPayload, payload, 'community-score');
-}
-
-/** Lấy điểm vai trò và thành tích. */
-async function getRoleScore(_accessTokenOrId: string, id?: string) {
-  return getScoreSection(id || _accessTokenOrId, 'role-score');
 }
 
 /** Cập nhật điểm vai trò và thành tích. */
@@ -209,10 +172,6 @@ async function markAllAsRead() {
   return patch<null>('/notifications/read-all');
 }
 
-function getScoreSection(id: string, section: string) {
-  return get<ScoreSectionResponse>(`/training-evaluations/${id}/${section}`);
-}
-
 function updateScoreSection(
   accessTokenOrId: string,
   idOrPayload: string | ScoreSectionPayload,
@@ -258,17 +217,10 @@ export const API_Student = {
   getEvaluationDetail,
   updateEvaluationNote,
   updateEvaluationDraft: updateEvaluationNote,
-  getEvaluationSummary,
-  getEvaluationStatus,
-  getStudyScore,
   updateStudyScore,
-  getDisciplineScore,
   updateDisciplineScore,
-  getActivityScore,
   updateActivityScore,
-  getCommunityScore,
   updateCommunityScore,
-  getRoleScore,
   updateRoleScore,
   submitEvaluation,
   linkEvidenceUrl,

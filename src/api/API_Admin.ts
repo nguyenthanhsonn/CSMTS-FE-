@@ -83,7 +83,7 @@ async function getAdminEvaluationList(query?: AdminEvaluationListQuery) {
 
 /** Lấy danh sách phiếu đánh giá cho admin duyệt cuối. */
 async function getAdminEvaluations(query?: AdminEvaluationListQuery) {
-  return get<PaginatedResponse<AdminEvaluationItem> | AdminEvaluationItem[]>('/admin/training-evaluations', {
+  return get<PaginatedResponse<AdminEvaluationItem> | AdminEvaluationItem[]>('/admin/evaluations', {
     params: buildQueryParams(query),
   });
 }
@@ -257,6 +257,11 @@ async function getClassById(id: string) {
   return get<AdminClass>(`/admin/classes/${id}`);
 }
 
+/** Lấy chi tiết lớp mà cố vấn học tập được phân công phụ trách. */
+async function getClassCouncilClassById(id: string) {
+  return get<AdminClass>(`/class-council/classes/${id}`);
+}
+
 /** Cập nhật danh sách cố vấn phụ trách lớp. */
 async function updateClassCouncils(classId: string, payload: { userIds: string[] }) {
   return patch<AdminClass>(`/admin/classes/${classId}/councils`, payload);
@@ -400,6 +405,7 @@ export const API_Admin = {
   confirmImportMajors,
   getClasses,
   getClassById,
+  getClassCouncilClassById,
   updateClassCouncils,
   getClassStudents,
   addStudentToClass,
