@@ -1,6 +1,7 @@
 'use client';
 
 import { ClipboardCheck } from 'lucide-react';
+import EvaluationStatusStepper from '@/components/common/EvaluationStatusStepper';
 
 export type StudentReviewStatus = 'not_submitted' | 'submitted';
 
@@ -10,6 +11,8 @@ export interface CouncilStudentReview {
   fullName: string;
   selfScore: number | null;
   status: StudentReviewStatus;
+  workflowStatus?: string;
+  statusLabel?: string;
 }
 
 interface StudentReviewTableProps {
@@ -36,7 +39,7 @@ export default function StudentReviewTable({ students, onReview }: StudentReview
               <th className="border-b border-r border-[#E9ECEF] px-4 py-4 text-left font-semibold text-[#495057]">Mã SV</th>
               <th className="border-b border-r border-[#E9ECEF] px-4 py-4 text-left font-semibold text-[#495057]">Họ tên</th>
               <th className="border-b border-r border-[#E9ECEF] px-4 py-4 text-left font-semibold text-[#495057]">SV tự chấm</th>
-              <th className="border-b border-r border-[#E9ECEF] px-4 py-4 text-left font-semibold text-[#495057]">Trạng thái</th>
+              <th className="border-b border-r border-[#E9ECEF] px-4 py-4 text-left font-semibold text-[#495057]">Tiến trình</th>
               <th className="border-b border-[#E9ECEF] px-4 py-4 text-left font-semibold text-[#495057]">Thao tác</th>
             </tr>
           </thead>
@@ -49,7 +52,10 @@ export default function StudentReviewTable({ students, onReview }: StudentReview
                   <td className="border-b border-r border-[#E9ECEF] px-4 py-4 text-[#1A1B1E]">{student.fullName}</td>
                   <td className="border-b border-r border-[#E9ECEF] px-4 py-4 text-[#1A1B1E]">{student.selfScore ?? '-'}</td>
                   <td className="border-b border-r border-[#E9ECEF] px-4 py-4">
-                    <span className={`ui-badge ${status.className}`}>{status.label}</span>
+                    <div className="space-y-2">
+                      <span className={`ui-badge ${status.className}`}>{student.statusLabel || status.label}</span>
+                      <EvaluationStatusStepper status={student.workflowStatus || student.status} compact />
+                    </div>
                   </td>
                   <td className="border-b border-[#E9ECEF] px-4 py-4">
                     {student.status !== 'submitted' ? (

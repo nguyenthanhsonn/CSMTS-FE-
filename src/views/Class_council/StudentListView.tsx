@@ -27,7 +27,7 @@ function toArray<T>(value: unknown): T[] {
 function toReviewStatus(status?: string): StudentReviewStatus {
   const normalized = String(status || '').toLowerCase();
 
-  if (normalized === 'submitted') {
+  if (['submitted', 'class_approved', 'finalized'].includes(normalized)) {
     return 'submitted';
   }
 
@@ -151,6 +151,8 @@ export function StudentListView() {
             fullName: student.fullName || student.name || student.user?.fullName || 'Sinh viên',
             selfScore: typeof totalScore === 'number' ? totalScore : null,
             status: evaluation ? toReviewStatus(evaluation.status) : 'not_submitted',
+            workflowStatus: evaluation?.status || 'not_submitted',
+            statusLabel: evaluation?.statusLabel,
           } satisfies CouncilStudentReview;
         });
 
