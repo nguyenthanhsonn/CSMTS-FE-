@@ -1,65 +1,87 @@
 import { TrendingUp } from 'lucide-react';
 import { ResultBannerProps } from '../../types';
 
-export const ResultBanner = ({ semester, academicYear, rating, totalScore, rankBadgeClass }: ResultBannerProps) => {
+export const ResultBanner = ({ semester, academicYear, rating, totalScore, rankBadgeClass: _rankBadgeClass }: ResultBannerProps) => {
+  const circumference = 2 * Math.PI * 44;
+  const strokeDashoffset = circumference * (1 - totalScore / 100);
+
+  const getRankStyle = (rank: string) => {
+    const r = (rank || '').toUpperCase();
+    if (r.includes('XUẤT SẮC') || r.includes('EXCELLENT')) return 'text-indigo-600 bg-indigo-50 border-indigo-200';
+    if (r.includes('TỐT') || r.includes('GOOD')) return 'text-indigo-500 bg-indigo-50 border-indigo-200';
+    if (r.includes('KHÁ') || r.includes('FAIR')) return 'text-indigo-400 bg-indigo-50 border-indigo-200';
+    if (r.includes('TRUNG BÌNH') || r.includes('AVERAGE')) return 'text-amber-600 bg-amber-50 border-amber-200';
+    return 'text-red-500 bg-red-50 border-red-200';
+  };
+
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#3D4A6B] to-[#2A3550] text-white shadow-sm p-6 sm:p-8 border border-gray-800/10 flex flex-col md:flex-row items-center justify-between gap-6">
-      {/* Left side info */}
-      <div className="relative z-10 space-y-3.5 max-w-md text-center md:text-left">
-        <span className="inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase backdrop-blur-sm">
-          {semester} — Năm học {academicYear}
-        </span>
-        <div>
-          <h2 className="text-xl sm:text-2xl font-semibold leading-tight">Kết quả đánh giá rèn luyện</h2>
-          <p className="text-xs text-white/70 leading-relaxed mt-1">
-            Điểm số rèn luyện chính thức đã được Hội đồng Khoa phê duyệt và xác nhận.
-          </p>
+    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-linear-to-br from-[#1e2d5a] via-[#243362] to-[#1a2650] p-6 sm:p-8 shadow-sm">
+      {/* Subtle decorative blobs */}
+      <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/3 blur-2xl" />
+      <div className="pointer-events-none absolute -bottom-10 left-1/3 h-40 w-40 rounded-full bg-indigo-400/10 blur-2xl" />
+
+      <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        {/* Left: text info */}
+        <div className="space-y-4">
+          {/* Semester pill */}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/8 px-3 py-1 text-[11px] font-medium tracking-wide text-white/70 backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+            {semester} · Năm học {academicYear}
+          </span>
+
+          {/* Title */}
+          <div>
+            <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
+              Kết quả đánh giá rèn luyện
+            </h2>
+            <p className="mt-1.5 text-xs leading-relaxed text-white/50">
+              Điểm số chính thức đã được Hội đồng Khoa phê duyệt và xác nhận.
+            </p>
+          </div>
+
+          {/* Badges row */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getRankStyle(rating)}`}>
+              Xếp loại: {rating}
+            </span>
+            <div className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/8 px-2.5 py-1 text-xs font-medium text-white/65">
+              <TrendingUp size={12} className="text-indigo-300" />
+              <span>+6đ so với kỳ trước</span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
-          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${rankBadgeClass(rating)}`}>
-            Xếp loại: {rating}
-          </span>
-          <div className="flex items-center gap-1 bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full text-xs font-semibold border border-emerald-500/20">
-            <TrendingUp size={13} />
-            <span>+6đ kỳ trước</span>
+        {/* Right: circular score */}
+        <div className="mx-auto shrink-0 md:mx-0">
+          <div className="relative flex h-28 w-28 items-center justify-center">
+            <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
+              {/* Track */}
+              <circle
+                cx="50" cy="50" r="44"
+                stroke="rgba(255,255,255,0.08)"
+                strokeWidth="6"
+                fill="transparent"
+              />
+              {/* Progress */}
+              <circle
+                cx="50" cy="50" r="44"
+                stroke="rgba(165,180,252,0.90)"
+                strokeWidth="6"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                fill="transparent"
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center">
+              <span className="text-3xl font-semibold leading-none tracking-tight text-white">
+                {totalScore}
+              </span>
+              <span className="mt-0.5 text-[10px] font-medium text-white/45">/100 điểm</span>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Right side circular progress */}
-      <div className="relative flex items-center justify-center h-28 w-28 shrink-0 md:mr-4">
-        <svg className="w-full h-full transform -rotate-90">
-          <circle
-            cx="56"
-            cy="56"
-            r="48"
-            className="text-white/10"
-            strokeWidth="7"
-            stroke="currentColor"
-            fill="transparent"
-          />
-          <circle
-            cx="56"
-            cy="56"
-            r="48"
-            className="text-white"
-            strokeWidth="7"
-            strokeDasharray={2 * Math.PI * 48}
-            strokeDashoffset={2 * Math.PI * 48 * (1 - totalScore / 100)}
-            strokeLinecap="round"
-            stroke="currentColor"
-            fill="transparent"
-          />
-        </svg>
-        <div className="absolute text-center">
-          <span className="text-3xl font-bold tracking-tight">{totalScore}</span>
-          <span className="text-[10px] block opacity-85 mt-0.5 font-bold">/100đ</span>
-        </div>
-      </div>
-
-      <div className="absolute -right-6 -top-6 h-36 w-36 rounded-full bg-white/5 blur-2xl" />
-      <div className="absolute -bottom-8 -right-8 h-48 w-48 rounded-full bg-white/5 blur-xl" />
     </div>
   );
 };

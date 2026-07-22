@@ -258,10 +258,12 @@ export function AdminEvaluations() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-140px)] flex-col bg-[#F8F9FA] p-4 sm:p-6">
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">Duyệt đánh giá rèn luyện</h1>
-        <p className="mt-1 text-sm font-medium text-[#868E96]">Các phiếu đã được Lớp/CVHT duyệt và đang chờ QTV phê duyệt cuối.</p>
+    <div className="flex flex-col px-4 sm:px-6 py-4 sm:py-6 bg-[#F8F9FA]">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Duyệt đánh giá rèn luyện</h1>
+          <p className="mt-1 text-sm font-medium text-[#868E96]">Các phiếu đã được Lớp/CVHT duyệt và đang chờ quản trị viên phê duyệt cuối.</p>
+        </div>
       </div>
 
       <div className="mb-4">

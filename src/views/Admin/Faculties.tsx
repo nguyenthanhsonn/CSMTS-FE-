@@ -228,9 +228,9 @@ export const AdminFaculties = () => {
   };
 
   return (
-    <div className="relative flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA] pb-24">
+    <div className="relative flex flex-col px-4 sm:px-6 py-4 sm:py-6 bg-[#F8F9FA] pb-28 sm:pb-6">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý Khoa</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Quản lý Khoa</h1>
         <SearchFilterBar
           searchValue={searchTerm}
           onSearchChange={handleSearchChange}

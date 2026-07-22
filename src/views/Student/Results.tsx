@@ -173,80 +173,67 @@ export const StudentResults = () => {
     fetchResults();
   }, []);
 
-  const getRankBadgeClass = (rank: string) => {
-    const r = rank ? rank.toUpperCase() : '';
-    if (r.includes('XUẤT SẮC') || r.includes('EXCELLENT')) {
-      return 'bg-emerald-500 text-white border border-emerald-400/30';
-    }
-    if (r.includes('TỐT') || r.includes('GOOD')) {
-      return 'bg-blue-500 text-white border border-blue-400/30';
-    }
-    if (r.includes('KHÁ') || r.includes('FAIR')) {
-      return 'bg-purple-500 text-white border border-purple-400/30';
-    }
-    if (r.includes('TRUNG BÌNH') || r.includes('AVERAGE')) {
-      return 'bg-amber-500 text-white border border-amber-400/30';
-    }
-    return 'bg-rose-500 text-white border border-rose-400/30';
-  };
-
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-        <Loader2 className="animate-spin text-blue-600" size={36} />
-        <p className="text-sm text-gray-500">Đang tải kết quả đánh giá...</p>
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
+        <Loader2 className="animate-spin text-indigo-600" size={32} />
+        <p className="text-sm text-slate-500">Đang tải kết quả đánh giá...</p>
       </div>
     );
   }
 
   if (!resultData) {
     return (
-      <div className="p-4 max-w-5xl mx-auto w-full">
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex flex-col items-center text-center gap-3">
-          <AlertCircle className="text-amber-600" size={40} />
-          <h3 className="text-lg font-bold text-amber-800">Chưa có kết quả</h3>
-          <p className="text-sm text-amber-600 max-w-md">Hiện chưa có dữ liệu kết quả rèn luyện được phê duyệt của học kỳ này.</p>
+      <div className="mx-auto w-full max-w-4xl p-6">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
+            <AlertCircle className="text-amber-500" size={24} />
+          </div>
+          <h3 className="text-base font-semibold text-slate-800">Chưa có kết quả</h3>
+          <p className="text-sm text-slate-500 max-w-sm">
+            Hiện chưa có dữ liệu kết quả rèn luyện được phê duyệt của học kỳ này.
+          </p>
         </div>
       </div>
     );
   }
 
+  // All progress bars use indigo — shade determined dynamically in DetailScoresCard
   const scoreBreakdown = [
-    { label: 'Ý thức học tập', icon: BookOpen, score: resultData.scores.academic, max: 30, color: 'bg-blue-500', textColor: 'text-blue-600' },
-    { label: 'Chấp hành nội quy', icon: ShieldAlert, score: resultData.scores.discipline, max: 25, color: 'bg-green-500', textColor: 'text-green-600' },
-    { label: 'Hoạt động CT-XH', icon: Users, score: resultData.scores.politicalSocial, max: 20, color: 'bg-purple-500', textColor: 'text-purple-600' },
-    { label: 'Ý thức cộng đồng', icon: Heart, score: resultData.scores.community, max: 15, color: 'bg-orange-500', textColor: 'text-orange-600' },
-    { label: 'Vai trò cán bộ', icon: Award, score: resultData.scores.leadership, max: 10, color: 'bg-pink-500', textColor: 'text-pink-500' },
+    { label: 'Ý thức học tập',      icon: BookOpen,   score: resultData.scores.academic,       max: 30, color: 'bg-indigo-500', textColor: 'text-indigo-600' },
+    { label: 'Chấp hành nội quy',   icon: ShieldAlert, score: resultData.scores.discipline,     max: 25, color: 'bg-indigo-500', textColor: 'text-indigo-600' },
+    { label: 'Hoạt động CT-XH',     icon: Users,       score: resultData.scores.politicalSocial, max: 20, color: 'bg-indigo-500', textColor: 'text-indigo-600' },
+    { label: 'Ý thức cộng đồng',    icon: Heart,       score: resultData.scores.community,      max: 15, color: 'bg-indigo-500', textColor: 'text-indigo-600' },
+    { label: 'Vai trò cán bộ',      icon: Award,       score: resultData.scores.leadership,     max: 10, color: 'bg-indigo-500', textColor: 'text-indigo-600' },
   ];
 
   return (
-    <div className="p-4 sm:p-5 max-w-5xl mx-auto w-full space-y-5">
-      <h1 className="text-2xl font-bold text-gray-900">Kết quả đánh giá</h1>
+    <div className="mx-auto w-full max-w-4xl space-y-6 p-4 sm:p-6">
+      {/* Page heading */}
+      <div>
+        <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl">Kết quả đánh giá</h1>
+        <p className="mt-1 text-sm text-slate-500">Xem điểm rèn luyện và nhận xét chính thức từ Hội đồng.</p>
+      </div>
 
-      {/* Tím-navy gradient banner */}
+      {/* Banner */}
       <ResultBanner
         semester={resultData.semester}
         academicYear={resultData.academicYear}
         rating={resultData.rating}
         totalScore={resultData.scores.total}
-        rankBadgeClass={getRankBadgeClass}
+        rankBadgeClass={() => ''}
       />
 
-      {/* Grid containing detailed scores and remarks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-        
-        {/* Card: Chi tiết điểm */}
+      {/* 2-column grid */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start">
+        {/* Left: Chi tiết điểm */}
         <DetailScoresCard scoreBreakdown={scoreBreakdown} />
 
-        {/* Column wrapper for comment and perks */}
-        <div className="space-y-5 flex flex-col">
-          {/* Card: Nhận xét */}
+        {/* Right: Nhận xét + Lợi ích */}
+        <div className="flex flex-col gap-6">
           <ReviewerCommentsCard reviewerComments={resultData.reviewerComments} />
-
-          {/* Card: Lợi ích */}
           <RankBenefitsCard rating={resultData.rating} />
         </div>
-
       </div>
     </div>
   );

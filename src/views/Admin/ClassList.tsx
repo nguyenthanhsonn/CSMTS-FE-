@@ -372,7 +372,7 @@ export const AdminClassList = ({ preSelectedClassId, onBack }: AdminClassListPro
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-140px)] p-4 bg-[#F8F9FA] gap-4">
+    <div className="flex flex-col px-4 sm:px-6 py-4 sm:py-6 bg-[#F8F9FA] gap-4">
       <div className="flex items-center justify-between">
         {onBack ? (
           <div className="flex items-center gap-3">

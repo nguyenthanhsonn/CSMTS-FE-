@@ -5,7 +5,6 @@ import { Users, GraduationCap, Building2, School, UserCog, BookOpen, Loader2, Al
 import { API_Admin } from '../../api/API_Admin';
 import { AdminStatsGrid } from '../../components/admin/AdminStatsGrid';
 import { AdminFacultyStatsCard } from '../../components/admin/AdminFacultyStatsCard';
-import { AdminActivityFeedCard } from '../../components/admin/AdminActivityFeedCard';
 
 const toArray = <T,>(value: any): T[] => {
   if (Array.isArray(value)) return value;
@@ -149,21 +148,10 @@ export const AdminDashboard = () => {
   const totalFacultyStudents = facultyStats.reduce((sum, item) => sum + item.students, 0);
   const maxStudents = facultyStats.length > 0 ? Math.max(...facultyStats.map((f) => f.students)) : 0;
 
-  const activities = [
-    { color: 'bg-[#2F9E44]', ring: 'ring-[#EBFBEE]', label: 'Thêm mới', content: 'Thêm 25 sinh viên mới vào hệ thống', time: '2 giờ trước' },
-    { color: 'bg-[#E67700]', ring: 'ring-[#FFF9DB]', label: 'Cập nhật', content: 'Cập nhật thông tin lớp CNTT-K19', time: '5 giờ trước' },
-    { color: 'bg-[#6741D9]', ring: 'ring-[#F3F0FF]', label: 'Import', content: 'Import danh sách lớp QTKD từ Excel', time: '1 ngày trước' },
-    { color: 'bg-[#3B5BDB]', ring: 'ring-[#EDF2FF]', label: 'Thêm mới', content: 'Tạo ngành học mới: Trí tuệ nhân tạo', time: '2 ngày trước' },
-  ];
 
-  const activityLabelColor: Record<string, string> = {
-    'Thêm mới': 'bg-[#EBFBEE] text-[#2F9E44]',
-    'Cập nhật': 'bg-[#FFF9DB] text-[#E67700]',
-    'Import': 'bg-[#F3F0FF] text-[#6741D9]',
-  };
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-5 w-full">
+    <div className="mx-auto flex max-w-7xl flex-col gap-5 w-full p-4 sm:p-6">
       {/* Header Section */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -198,11 +186,6 @@ export const AdminDashboard = () => {
               maxStudents={maxStudents}
             />
 
-            {/* Activity feed */}
-            <AdminActivityFeedCard
-              activities={activities}
-              activityLabelColor={activityLabelColor}
-            />
           </div>
         </>
       )}

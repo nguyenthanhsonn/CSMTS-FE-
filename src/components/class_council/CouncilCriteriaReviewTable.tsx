@@ -247,7 +247,7 @@ export const CouncilCriteriaReviewTable = (props: CouncilCriteriaReviewTableProp
         </div>
       )}
 
-      <div className="w-full overflow-hidden">
+      <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="bg-gray-100 border-b border-gray-300 text-gray-700 text-center font-bold">

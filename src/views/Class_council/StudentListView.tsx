@@ -9,6 +9,7 @@ import ClassStatsWidget from '@/components/class_council/ClassStatsWidget';
 import StudentReviewTable, { type CouncilStudentReview, type StudentReviewStatus } from '@/components/class_council/StudentReviewTable';
 import { useToast } from '@/components/common/ToastProvider';
 import { useAuthStore } from '@/store/authStore';
+import { getUserFriendlyError } from '@/utils/errorHelper';
 
 const getParam = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value ?? '');
 
@@ -162,7 +163,7 @@ export function StudentListView() {
           return;
         }
         setStudents([]);
-        toast.error(error?.message || 'Không tải được danh sách sinh viên của lớp.');
+        toast.error(getUserFriendlyError(error, 'Không tải được danh sách sinh viên của lớp.'));
       } finally {
         if (mounted) {
           setLoading(false);

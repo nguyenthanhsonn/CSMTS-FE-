@@ -8,7 +8,6 @@ import {
   History,
   Award,
   Users,
-  User,
   Building2,
   GraduationCap,
   X,
@@ -36,7 +35,6 @@ const adminMenuItems = [
 
 const classCouncilMenuItems = [
   { path: '/class_council', icon: Users, label: 'Lớp phụ trách' },
-  { path: '/class_council/profile', icon: User, label: 'Thông tin cá nhân' },
 ];
 
 interface SidebarProps {
@@ -67,18 +65,19 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
   return (
     <>
       {/* Mobile overlay */}
-      {open && (
-        <button
-          type="button"
-          aria-label="Đóng menu"
-          className="fixed inset-0 z-40 cursor-pointer bg-black/50 backdrop-blur-[2px] lg:hidden"
-          onClick={onClose}
-        />
-      )}
+      <button
+        type="button"
+        aria-label="Đóng menu"
+        className={`fixed inset-0 z-40 cursor-pointer bg-black/50 backdrop-blur-[2px] lg:hidden transition-all duration-300 ease-in-out ${
+          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[220px] flex-col bg-[#104E92] shadow-2xl transition-transform duration-200 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'
-          }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[220px] flex-col bg-[#104E92] shadow-2xl transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
         {/* Logo header */}
         <div className="relative flex h-16 items-center justify-between border-b border-white/10 px-4">

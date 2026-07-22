@@ -380,10 +380,10 @@ export const AdminSemesters = () => {
   ];
 
   return (
-    <div className="relative flex min-h-[calc(100vh-140px)] flex-col bg-[#F8F9FA] p-6 pb-24">
+    <div className="relative flex flex-col px-4 sm:px-6 py-4 sm:py-6 bg-[#F8F9FA] pb-28 sm:pb-6">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý Học kỳ</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Quản lý Học kỳ</h1>
           <p className="mt-1 text-sm text-gray-500">Tạo, chỉnh sửa và mở/đóng kỳ đánh giá rèn luyện.</p>
         </div>
         <div className="flex flex-wrap gap-3">

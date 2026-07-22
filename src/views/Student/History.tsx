@@ -393,9 +393,9 @@ export const StudentHistory = () => {
   }
 
   return (
-    <div className="p-4 sm:p-5 max-w-5xl mx-auto w-full flex-1 flex flex-col overflow-hidden h-[calc(100vh-165px)] lg:h-[calc(100vh-145px)]">
+    <div className="px-4 pb-4 pt-4 sm:px-5 sm:pb-5 sm:pt-5 max-w-5xl mx-auto w-full flex flex-col min-h-full">
       {/* Vùng trên: Header & Filter Controls Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-3 shrink-0">
+      <div className="pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b shrink-0 mb-3">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Lịch sử đánh giá</h1>
         
         {/* Filters */}

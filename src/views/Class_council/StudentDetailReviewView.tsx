@@ -8,6 +8,7 @@ import CouncilCriteriaReviewTable from '@/components/class_council/CouncilCriter
 import EvidenceReviewModal, { type ReviewEvidence } from '@/components/class_council/EvidenceReviewModal';
 import EvaluationStatusStepper from '@/components/common/EvaluationStatusStepper';
 import { useToast } from '@/components/common/ToastProvider';
+import { getUserFriendlyError } from '@/utils/errorHelper';
 
 interface ReviewStudent {
   id: string;
@@ -352,7 +353,7 @@ export function StudentDetailReviewView() {
         if (!mounted) return;
         setStudent(null);
         setHasEvaluation(false);
-        toast.error(error?.message || 'Không tải được phiếu đánh giá.');
+        toast.error(getUserFriendlyError(error, 'Không tải được phiếu đánh giá.'));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -483,7 +484,7 @@ export function StudentDetailReviewView() {
       toast.success('Đã gửi phiếu lên Admin.');
       router.push(`/class_council/${classId}`);
     } catch (error: any) {
-      toast.error(error?.message || 'Không gửi được phiếu lên Admin.');
+      toast.error(getUserFriendlyError(error, 'Không gửi được phiếu lên Admin.'));
     } finally {
       setApproving(false);
     }

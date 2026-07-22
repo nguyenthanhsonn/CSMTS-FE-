@@ -271,7 +271,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                             <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${item.isRead ? 'bg-gray-400' : 'bg-amber-500'}`} />
                             <div className="min-w-0">
                               <p className={`text-[11px] font-bold ${item.isRead ? 'text-gray-600' : 'text-amber-950'}`}>{item.title}</p>
-                              <p className="mt-0.5 text-[10px] font-medium leading-normal text-gray-500 break-words">{item.description}</p>
+                              <p className="mt-0.5 text-[10px] font-medium leading-normal text-gray-500 wrap-break-word">{item.description}</p>
                             </div>
                           </div>
                         ))
@@ -292,7 +292,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 aria-expanded={dropdownOpen}
                 aria-haspopup="true"
               >
-                <div className="flex flex-col items-end text-right">
+                <div className="hidden sm:flex flex-col items-end text-right">
                   <span className="text-sm font-semibold text-gray-900 leading-tight">
                     {displayName || 'Hội đồng Học viện'}
                   </span>
@@ -308,6 +308,16 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
               {/* Dropdown Menu */}
               {dropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl border border-[#E9ECEF] bg-white shadow-lg p-1.5 focus:outline-none animate-in fade-in-0 slide-in-from-top-2 duration-150 ease-out z-50">
+                  {/* User Profile Header (Mobile only) */}
+                  <div className="px-3 py-2 border-b border-[#E9ECEF] sm:hidden">
+                    <p className="text-xs font-bold text-gray-900 truncate">
+                      {displayName || 'Hội đồng Học viện'}
+                    </p>
+                    <p className="text-[10px] font-medium text-gray-500 mt-0.5">
+                      {roleLabel}
+                    </p>
+                  </div>
+                  
                   {/* Navigation Items */}
                   {dropdownItems.map((item) => {
                     const Icon = item.icon;

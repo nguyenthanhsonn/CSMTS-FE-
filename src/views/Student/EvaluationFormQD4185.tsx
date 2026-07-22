@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Send, 
   CheckCircle, 
@@ -14,16 +14,11 @@ import { API_Student } from '../../api/API_Student';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { uploadEvidenceFile } from '../../services/cloudinaryUpload';
 import { useToast } from '../../components/common/ToastProvider';
-import EvaluationStatusStepper from '../../components/common/EvaluationStatusStepper';
+import { getUserFriendlyError } from '../../utils/errorHelper';
 
 // Sub-components
 import { EvaluationTableGrid } from '../../components/student/EvaluationTableGrid';
-
-type UploadedEvidenceFile = {
-  name: string;
-  url: string;
-  type?: string;
-};
+import type { UploadedEvidenceFile } from '@/types/student';
 
 const EDITABLE_EVALUATION_STATUSES = ['DRAFT', 'REJECTED'];
 const DISCIPLINE_VIOLATION_CODES = [
@@ -49,7 +44,7 @@ export const EvaluationFormQD4185 = () => {
 	  const [isLocked, setIsLocked] = useState(false);
 	  const [alreadyEvaluated, setAlreadyEvaluated] = useState(false);
   const [evaluationId, setEvaluationId] = useState<string | null>(null);
-  const [evaluationWorkflow, setEvaluationWorkflow] = useState<any>(null);
+  const [, setEvaluationWorkflow] = useState<any>(null);
   const [note, setNote] = useState<string>('');
 
   // Simulating user role switcher for testing purposes
@@ -178,7 +173,7 @@ export const EvaluationFormQD4185 = () => {
 	        [criteriaKey]: [...(prev[criteriaKey] || []), ...uploadedItems]
 	      }));
 	    } catch (err: any) {
-	      const message = err.message || 'Không thể tải minh chứng. Vui lòng thử lại.';
+	      const message = getUserFriendlyError(err, 'Không thể tải minh chứng. Vui lòng thử lại.');
 	      if (err.statusCode === 409 || message.includes('khóa') || message.includes('locked')) {
 	        setIsLocked(true);
 	        setIsReadOnly(true);
@@ -762,7 +757,7 @@ export const EvaluationFormQD4185 = () => {
 	      setAvailableSemesters(items);
 	    } catch (err) {
 	      console.error('Failed to load available semesters:', err);
-	      toast.error('Không thể tải danh sách học kỳ. Vui lòng thử lại sau.');
+	      toast.error(getUserFriendlyError(err, 'Không thể tải danh sách học kỳ. Vui lòng thử lại sau.'));
       }
     };
 
@@ -957,7 +952,7 @@ export const EvaluationFormQD4185 = () => {
 	        setStep(2);
 	        setEvaluationUrlParam(newEval.id);
       } catch (err: any) {
-        const message = err.message || 'Không thể tạo phiếu đánh giá.';
+        const message = getUserFriendlyError(err, 'Không thể tạo phiếu đánh giá.');
         if (err.statusCode === 409 || message.includes('đã tồn tại')) {
           try {
             const refreshed = await API_Student.getMyEvaluations(accessToken);
@@ -1011,7 +1006,7 @@ export const EvaluationFormQD4185 = () => {
         })
         .catch((err) => {
           console.error('Failed to load evaluation detail from URL:', err);
-          toast.error(err.message || 'Không thể tải chi tiết phiếu đánh giá.');
+          toast.error(getUserFriendlyError(err, 'Không thể tải chi tiết phiếu đánh giá.'));
           setStep(1);
         })
         .finally(() => setLoading(false));
@@ -1405,7 +1400,7 @@ export const EvaluationFormQD4185 = () => {
         router.replace('/student/history');
       } catch (err: any) {
         setIsSubmitting(false);
-        const message = err.message || 'Lỗi gửi duyệt phiếu đánh giá.';
+        const message = getUserFriendlyError(err, 'Lỗi gửi duyệt phiếu đánh giá.');
         toast.error(message);
         const apiFieldErrors = mapApiErrorsToFields(err.errors);
         if (message.includes('đã đóng') || message.includes('đã bị khóa')) {
@@ -1646,13 +1641,6 @@ export const EvaluationFormQD4185 = () => {
 	              <p className="text-sm font-bold">Học kỳ này đã đánh giá</p>
 	            </div>
 	          )}
-
-	          <EvaluationStatusStepper
-	            status={evaluationWorkflow?.status}
-	            statusLabel={evaluationWorkflow?.statusLabel}
-	            steps={evaluationWorkflow?.steps}
-	            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-	          />
 
 	          <EvaluationTableGrid
             currentUserRole={currentUserRole}

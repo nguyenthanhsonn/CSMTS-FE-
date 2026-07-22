@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState, useRef } from 'react';
 import { CheckCircle, Info, X, XCircle } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'info';
@@ -41,6 +41,7 @@ const toastStyles: Record<ToastType, { icon: React.ReactNode; className: string;
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const lastToastRef = useRef<{ message: string; type: ToastType; timestamp: number } | null>(null);
 
   const removeToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -48,9 +49,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const pushToast = useCallback(
     (message: string, type: ToastType) => {
-      const id = Date.now() + Math.random();
-      setToasts((prev) => [...prev, { id, message, type, duration: TOAST_DURATION_MS }]);
-      window.setTimeout(() => removeToast(id), TOAST_DURATION_MS);
+      const now = Date.now();
+
+      // Deduplicate: từ chối nếu đã có toast cùng nội dung/loại trong 2 giây qua
+      if (
+        lastToastRef.current &&
+        lastToastRef.current.message === message &&
+        lastToastRef.current.type === type &&
+        now - lastToastRef.current.timestamp < 2000
+      ) {
+        return;
+      }
+
+      // Deduplicate: từ chối nếu hiện đang có toast cùng nội dung/loại đang hiển thị
+      setToasts((prev) => {
+        const isDuplicate = prev.some((t) => t.message === message && t.type === type);
+        if (isDuplicate) return prev;
+
+        lastToastRef.current = { message, type, timestamp: now };
+        const id = now + Math.random();
+        window.setTimeout(() => removeToast(id), TOAST_DURATION_MS);
+        return [...prev, { id, message, type, duration: TOAST_DURATION_MS }];
+      });
     },
     [removeToast]
   );
@@ -67,7 +87,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed right-4 top-4 z-[9999] flex w-[calc(100vw-2rem)] max-w-sm flex-col gap-2">
+      <div className="fixed right-4 top-4 z-9999 flex w-[calc(100vw-2rem)] max-w-sm flex-col gap-2">
         {toasts.map((toast) => {
           const style = toastStyles[toast.type];
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Lock, X, Eye, EyeOff, Loader2, AlertCircle, CheckCircle, KeyRound } from 'lucide-react';
 import { API_Auth } from '../../api/API_Auth';
 import { useAuthStore } from '../../store/authStore';
+import { getUserFriendlyError } from '../../utils/errorHelper';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -96,7 +97,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
         }, 1200);
       }
     } catch (err: any) {
-      setError(err.message || 'Đã xảy ra lỗi khi đổi mật khẩu.');
+      setError(getUserFriendlyError(err, 'Đã xảy ra lỗi khi đổi mật khẩu.'));
     } finally {
       setLoading(false);
     }
@@ -111,7 +112,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-[420px] transform overflow-hidden rounded-2xl bg-white p-6 shadow-[0_25px_60px_-15px_rgba(59,91,219,0.2)] border border-[#E9ECEF] transition-all duration-300 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300 ease-out">
+      <div className="relative w-full max-w-[420px] transform overflow-hidden rounded-2xl bg-white p-6 shadow-[0_25px_60px_-15px_rgba(59,91,219,0.2)] border border-[#E9ECEF] transition-all animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300 ease-out">
         
         {/* Close Button */}
         <button
@@ -125,7 +126,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
 
         {/* Header */}
         <div className="flex flex-col items-center text-center mt-2 mb-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3B5BDB] to-[#6741D9] text-white shadow-lg shadow-[#3B5BDB]/20 mb-3.5">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-[#3B5BDB] to-[#6741D9] text-white shadow-lg shadow-[#3B5BDB]/20 mb-3.5">
             <Lock size={22} className="stroke-[2.5]" />
           </div>
           <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">
@@ -252,7 +253,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center justify-center gap-1.5 px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-[#3B5BDB] to-[#6741D9] hover:from-[#2B49C4] hover:to-[#5532C0] rounded-xl shadow-lg shadow-[#3B5BDB]/20 hover:shadow-xl hover:shadow-[#3B5BDB]/30 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px]"
+              className="flex items-center justify-center gap-1.5 px-5 py-2.5 text-sm font-bold text-white bg-linear-to-r from-[#3B5BDB] to-[#6741D9] hover:from-[#2B49C4] hover:to-[#5532C0] rounded-xl shadow-lg shadow-[#3B5BDB]/20 hover:shadow-xl hover:shadow-[#3B5BDB]/30 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px]"
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
               <span>{loading ? 'Đang cập nhật...' : 'Đổi mật khẩu'}</span>

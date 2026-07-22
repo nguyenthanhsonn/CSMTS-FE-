@@ -1,6 +1,7 @@
 import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 
 import type { RefreshTokenResponse } from '../types';
+import { getUserFriendlyError, logError } from '../utils/errorHelper';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://10.36.120.154:5050/api/v1';
 
@@ -16,6 +17,14 @@ interface ApiResponse<T> {
 interface ApiErrorPayload {
   message?: string;
   errors?: unknown;
+}
+
+/** Type mở rộng của Error để mang thêm thông tin phân loại lỗi */
+export interface ApiError extends Error {
+  statusCode?: number;
+  errors?: unknown;
+  /** Message thân thiện đã được map — dùng để hiển thị toast/UI, không bao giờ chứa thông tin kỹ thuật */
+  userMessage?: string;
 }
 
 interface AuthRetryConfig extends InternalAxiosRequestConfig {
@@ -102,29 +111,42 @@ axiosInstance.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${tokenData.accessToken}`;
 
           return axiosInstance(originalRequest);
-        } catch {
+        } catch (refreshErr) {
           clearStoredAuth();
+          logError('api/refresh-token', refreshErr);
 
           if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
             window.location.replace('/login');
           }
 
-          const sessionError = new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.') as Error & {
-            statusCode?: number;
-          };
+          const sessionError = new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.') as ApiError;
           sessionError.statusCode = 401;
+          sessionError.userMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
           throw sessionError;
         }
       }
     }
 
-    const message =
+    // Giữ nguyên message gốc từ BE trong .message để business logic (như captcha detection) vẫn hoạt động
+    const rawMessage =
       error.response?.data?.message ||
       error.message ||
       'Không thể kết nối tới máy chủ. Vui lòng thử lại.';
-    const apiError = new Error(message) as Error & { errors?: unknown; statusCode?: number };
+
+    const apiError = new Error(rawMessage) as ApiError;
     apiError.errors = error.response?.data?.errors;
     apiError.statusCode = error.response?.status;
+
+    // Gắn sẵn userMessage (friendly) — các component dùng toast nên ưu tiên field này
+    // getUserFriendlyError sẽ đọc apiError.userMessage nếu đã có, nên set trước khi truyền
+    apiError.userMessage = getUserFriendlyError(
+      {
+        message: rawMessage,
+        statusCode: error.response?.status,
+        errors: error.response?.data?.errors,
+      },
+      'Có lỗi xảy ra, vui lòng thử lại sau.'
+    );
 
     throw apiError;
   }

@@ -1,3 +1,5 @@
+import { getUserFriendlyError as getFriendlyError } from './errorHelper';
+
 type ListResponse<T> =
   | T[]
   | {
@@ -6,16 +8,6 @@ type ListResponse<T> =
     }
   | null
   | undefined;
-
-const TECHNICAL_ERROR_PATTERNS = [
-  'is not a function',
-  'cannot read',
-  'undefined',
-  'null',
-  'network error',
-  'request failed with status code 500',
-  'internal server error',
-];
 
 export function toArray<T>(response: ListResponse<T>): T[] {
   if (Array.isArray(response)) {
@@ -38,27 +30,5 @@ export function toArray<T>(response: ListResponse<T>): T[] {
 }
 
 export function getUserFriendlyError(error: unknown, fallbackMessage: string) {
-  const message = error instanceof Error ? error.message : '';
-  const statusCode = typeof error === 'object' && error !== null && 'statusCode' in error ? Number(error.statusCode) : undefined;
-  const errors = typeof error === 'object' && error !== null && 'errors' in error ? error.errors : undefined;
-  const firstValidationError = Array.isArray(errors) ? errors[0] : null;
-  const validationMessage =
-    firstValidationError &&
-    typeof firstValidationError === 'object' &&
-    'error' in firstValidationError &&
-    typeof firstValidationError.error === 'string'
-      ? firstValidationError.error
-      : '';
-  const normalizedMessage = message.toLowerCase();
-  const isTechnicalMessage = TECHNICAL_ERROR_PATTERNS.some((pattern) => normalizedMessage.includes(pattern));
-
-  if (validationMessage) {
-    return validationMessage;
-  }
-
-  if (!message || isTechnicalMessage || (statusCode && statusCode >= 500)) {
-    return fallbackMessage;
-  }
-
-  return message;
+  return getFriendlyError(error, fallbackMessage);
 }

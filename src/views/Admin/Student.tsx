@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Lock, Unlock, AlertCircle, Upload } from 'lucide-react';
+import { Edit, Trash2, Lock, Unlock, AlertCircle } from 'lucide-react';
 import ModalCreateStudent from '../../components/admin/modalCreateStudent';
 import ModalCreateManualStudent from '../../components/admin/modalCreateManualStudent';
 import ModalImportExcel from '../../components/admin/modalImportExcel';
@@ -9,6 +9,7 @@ import { Class, CreateStudentPayload, StudentManagementItem, StudentFormValues }
 import ModalConfirm from '../../components/common/modalConfirm';
 import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import DataTable, { type Column } from '../../components/admin/DataTable';
+import { AddActionsDropdown } from '../../components/admin/AddActionsDropdown';
 import { API_Admin } from '../../api/API_Admin';
 import { useToast } from '../../components/common/ToastProvider';
 import { getUserFriendlyError, toArray } from '../../utils/adminData';
@@ -364,9 +365,9 @@ export const AdminUsers = () => {
   };
 
   return (
-    <div className="relative flex flex-col min-h-[calc(100vh-140px)] p-6 bg-[#F8F9FA] pb-24">
+    <div className="relative flex flex-col px-4 sm:px-6 py-4 sm:py-6 bg-[#F8F9FA] pb-28 sm:pb-6">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
         <SearchFilterBar
           searchValue={searchTerm}
           onSearchChange={handleSearchChange}
@@ -415,28 +416,12 @@ export const AdminUsers = () => {
         />
       </div>
 
-      <div className="fixed bottom-8 right-8 z-20 flex flex-col gap-3 sm:flex-row">
-        <button
-          onClick={() => setStudentModalOpen(true)}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-full border border-blue-600 bg-white px-5 py-3 text-sm font-semibold text-blue-700 shadow-lg shadow-blue-900/10 transition hover:bg-blue-50"
-        >
-          <Plus size={18} />
-          Thêm sinh viên
-        </button>
-        <button
-          onClick={() => setImportOpen(true)}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-full border border-emerald-600 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 shadow-lg shadow-emerald-900/10 transition hover:bg-emerald-50"
-        >
-          <Upload size={18} />
-          Nhập sinh viên từ Excel
-        </button>
-        <button
-          onClick={() => { setEditingStudent(null); setShowModal(true); }}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0B3A82] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#104E92]"
-        >
-          <Plus size={18} />
-          Thêm người dùng
-        </button>
+      <div className="fixed bottom-8 right-8 z-20">
+        <AddActionsDropdown
+          onAddStudent={() => setStudentModalOpen(true)}
+          onImportExcel={() => setImportOpen(true)}
+          onAddUser={() => { setEditingStudent(null); setShowModal(true); }}
+        />
       </div>
 
       <ModalCreateStudent
