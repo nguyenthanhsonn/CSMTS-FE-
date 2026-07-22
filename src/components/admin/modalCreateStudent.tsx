@@ -1,26 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ElementType, ReactNode } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { X, User, Lock, Mail, Phone, Calendar, ShieldCheck } from 'lucide-react';
-import type { StudentFormValues } from '../../types';
-
-interface ModalCreateStudentProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (values: StudentFormValues) => Promise<void> | void;
-  editData?: StudentFormValues | null;
-}
-
-interface FieldProps {
-  label: string;
-  icon: ElementType;
-  required?: boolean;
-  error?: ReactNode;
-  children: ReactNode;
-}
+import type { StudentFormValues, ModalCreateStudentProps, CreateStudentFieldProps as FieldProps } from '../../types';
 
 function Field({ label, icon: Icon, required, error, children }: FieldProps) {
   const normalizedError = Array.isArray(error) ? error[0] : error;

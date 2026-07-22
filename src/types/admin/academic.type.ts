@@ -39,3 +39,8 @@ export interface ClassCouncil {
   isActive: boolean;
   assignedAt?: string;
 }
+
+export type ClassTableRow = Class & {
+  majorName: string;
+  facultyName: string;
+};

@@ -1,14 +1,4 @@
-import type { Student } from '../types';
-
-type StudentProfilePayload = Partial<Student> & {
-  user?: Partial<Student> | null;
-  studentCode?: string | null;
-  fullName?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  phoneNumber?: string | null;
-  dateOfBirth?: string | null;
-};
+import type { Student, StudentProfilePayload } from '../types';
 
 export function normalizeStudentProfile(
   baseUser: Partial<Student> | null | undefined,

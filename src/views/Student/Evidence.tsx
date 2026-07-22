@@ -57,15 +57,28 @@ export const StudentEvidence = () => {
       setUploadingGroup(criteriaId);
       setError(null);
 
-	      for (const file of fileList) {
-	        const { secureUrl, publicId } = await uploadEvidenceFile(file);
-	        await API_Student.linkEvidenceUrl({
-	          criteriaCode: criteriaId,
-	          imageUrl: secureUrl,
-	          publicId,
-	        });
-	      }
+      // Upload song song toàn bộ file — tích hợp compression tự động trong uploadEvidenceFile
+      const results = await Promise.allSettled(
+        fileList.map(async (file) => {
+          const { secureUrl, publicId } = await uploadEvidenceFile(file);
+          await API_Student.linkEvidenceUrl({
+            criteriaCode: criteriaId,
+            imageUrl: secureUrl,
+            publicId,
+          });
+        })
+      );
 
+      // Thông báo file lỗi nếu có
+      const failedNames = results
+        .map((r, i) => (r.status === 'rejected' ? fileList[i].name : null))
+        .filter(Boolean) as string[];
+
+      if (failedNames.length > 0) {
+        setError(`Không thể tải lên: ${failedNames.join(', ')}. Vui lòng thử lại.`);
+      }
+
+      // Reload danh sách từ server để đảm bảo đồng bộ
       await loadEvidences();
     } catch (err: any) {
       setError(err.message || 'Không thể tải minh chứng. Vui lòng thử lại.');

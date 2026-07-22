@@ -3,15 +3,8 @@
 import { ChangeEvent, useState } from 'react';
 import { CheckCircle, Download, FileSpreadsheet, FileText, Loader2, Send, Upload, X, XCircle } from 'lucide-react';
 import { API_Admin } from '../../api/API_Admin';
-import type { ImportStudentPreviewItem, ImportStudentsResult } from '../../types';
+import type { ImportStudentPreviewItem, ImportStudentsResult, ModalImportExcelProps } from '../../types';
 import { getUserFriendlyError } from '../../utils/adminData';
-
-interface ModalImportExcelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
-  classId?: string;
-}
 
 const emptyResult: ImportStudentsResult = {
   totalRows: 0,

@@ -1,13 +1,7 @@
 'use client';
 
 import { CheckCircle2, Clock3, FileText, Users } from 'lucide-react';
-
-interface ClassStatsWidgetProps {
-  total: number;
-  submitted: number;
-  approved: number;
-  notSubmitted: number;
-}
+import type { ClassStatsWidgetProps } from '@/types/admin';
 
 const statMeta = [
   { key: 'total', label: 'Tổng SV', icon: Users, border: 'border-t-[#3B5BDB]', bg: 'bg-[#EDF2FF]', color: 'text-[#3B5BDB]' },

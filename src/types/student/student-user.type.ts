@@ -44,3 +44,27 @@ export interface StudentInfo {
   dateOfBirth: string;
   phoneNumber: string;
 }
+
+export type ManagedClass = {
+  classId?: string;
+  classCode?: string;
+  className?: string;
+  enrollmentYear?: number;
+  studentCount?: number;
+  major?: { name?: string } | null;
+  faculty?: { name?: string } | null;
+};
+
+export type ProfileUser = User & Partial<Omit<Student, 'role'>> & {
+  managedClasses?: ManagedClass[];
+};
+
+export type StudentProfilePayload = Partial<Student> & {
+  user?: Partial<Student> | null;
+  studentCode?: string | null;
+  fullName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  phoneNumber?: string | null;
+  dateOfBirth?: string | null;
+};

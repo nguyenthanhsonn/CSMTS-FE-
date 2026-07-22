@@ -3,14 +3,8 @@
 import { ChangeEvent, useState } from 'react';
 import { CheckCircle, Download, FileSpreadsheet, FileText, Loader2, Send, Upload, X, XCircle } from 'lucide-react';
 import { API_Admin } from '../../api/API_Admin';
-import type { ImportFacultiesResult } from '../../types';
+import type { ImportFacultiesResult, ModalImportFacultyProps } from '../../types';
 import { getUserFriendlyError } from '../../utils/adminData';
-
-interface ModalImportFacultyProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
-}
 
 const getRows = (result: ImportFacultiesResult) =>
   result.previewFaculties?.length

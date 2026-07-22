@@ -2,23 +2,7 @@
 
 import React from 'react';
 import { AlertTriangle, Trash2, Info, X } from 'lucide-react';
-
-interface ModalConfirmProps {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  targetName?: string;
-  type?: 'danger' | 'warning' | 'info';
-  confirmText?: string;
-  cancelText?: string;
-  hasReasonInput?: boolean;
-  reasonValue?: string;
-  onReasonChange?: (val: string) => void;
-  reasonLabel?: string;
-  reasonPlaceholder?: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
+import type { ModalConfirmProps } from '@/types/common';
 
 export default function ModalConfirm({
   isOpen,

@@ -5,28 +5,8 @@ import { AlertCircle, BarChart3, CheckCircle2, Eye, Loader2, Search, ShieldCheck
 import { API_Admin } from '../../api/API_Admin';
 import EvaluationStatusStepper from '../../components/common/EvaluationStatusStepper';
 import { useToast } from '../../components/common/ToastProvider';
-import type { AdminClass, AdminEvaluationItem, AdminFaculty, AdminSemester } from '../../types';
+import type { AdminClass, AdminFaculty, AdminSemester, EvaluationRow, PagedResult } from '../../types';
 import { getUserFriendlyError, toArray } from '../../utils/adminData';
-
-type EvaluationRow = AdminEvaluationItem & {
-  studentName: string;
-  className: string;
-  classId?: string;
-  facultyId?: string;
-  classScore: number | null;
-  finalScore?: number | null;
-  classification?: string | null;
-  semester?: string;
-  academicYear?: string;
-  statusLabel?: string | null;
-};
-
-type PagedResult<T> = {
-  items: T[];
-  page: number;
-  limit: number;
-  total: number;
-};
 
 const normalizeStatus = (status?: string) => String(status || '').toLowerCase();
 

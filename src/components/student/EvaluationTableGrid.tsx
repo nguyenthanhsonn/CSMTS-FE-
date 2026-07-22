@@ -1,16 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Minus, Lock, Upload, X, ChevronDown } from 'lucide-react';
+import { Plus, Minus, Lock, Upload, X, ChevronDown, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import type { GridDeductionStepperProps as DeductionStepperProps, UploadedEvidenceFile, EvaluationTableGridProps } from '@/types/student';
 
 const DEDUCTION_WEIGHTS = [10, 3, 5, 5, 5, 5, 5, 10, 20];
-
-interface DeductionStepperProps {
-  isSv: boolean; index: number; value: number;
-  onChange: (val: number) => void; disabled: boolean;
-  weight: number; noViolationScore: number; allDeductions: number[];
-  currentUserRole: 'student' | 'class'; isReadOnly: boolean;
-}
 const DeductionStepper = ({ isSv, index, value, onChange, disabled, weight, noViolationScore, allDeductions, currentUserRole, isReadOnly }: DeductionStepperProps) => {
   const sumOther = allDeductions.reduce((s, c, i) => i === index ? s : s + (Number(c) || 0) * DEDUCTION_WEIGHTS[i], 0);
   const baseScore = Number(noViolationScore) || 0;
@@ -66,18 +60,23 @@ const NoteArea = ({ value, onChange, disabled }: { value:string; onChange:(v:str
   <textarea value={value} onChange={e=>onChange(e.target.value)} disabled={disabled} rows={2} placeholder={disabled ? '' : 'Nhận xét / minh chứng...'} className="w-full text-[11px] border border-gray-300 rounded px-1.5 py-1 resize-none outline-none focus:ring-1 focus:ring-blue-400 bg-white disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed leading-snug"/>
 );
 
-type UploadedEvidenceFile = {
-  name: string;
-  url: string;
-  type?: string;
-};
 
-const MiniUpload = ({ fileKey, uploadedFiles, handleFileUpload, removeFile, disabled, required }: { fileKey:string; uploadedFiles:Record<string,UploadedEvidenceFile[]>; handleFileUpload:(k:string,e:React.ChangeEvent<HTMLInputElement>)=>void; removeFile:(k:string,i:number)=>void; disabled:boolean; required?:boolean }) => {
+
+const MiniUpload = ({ fileKey, uploadedFiles, handleFileUpload, removeFile, disabled, fileUploadProgress }: { fileKey:string; uploadedFiles:Record<string,UploadedEvidenceFile[]>; handleFileUpload:(k:string,e:React.ChangeEvent<HTMLInputElement>)=>void; removeFile:(k:string,i:number)=>void; disabled:boolean; required?:boolean; fileUploadProgress?: Record<string, Record<string, number | 'done' | 'error'>> }) => {
   const files = uploadedFiles[fileKey] || [];
+  const keyProgress = fileUploadProgress?.[fileKey] || {};
+  // Các file đang uploading (chưa có trong uploadedFiles nhưng có trong progress và chưa 'done'/'error')
+  const pendingEntries = Object.entries(keyProgress).filter(
+    ([name, pct]) => pct !== 'done' && pct !== 'error' && !files.some(f => f.name === name)
+  );
+  const errorEntries = Object.entries(keyProgress).filter(([, pct]) => pct === 'error');
+
   return (
     <div className="mt-1.5 space-y-1">
+      {/* Các file đã upload thành công */}
       {files.map((f,i)=>(
         <div key={i} className="flex items-center justify-between gap-2 text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold">
+          <CheckCircle size={11} className="shrink-0 text-green-500" />
           <button
             type="button"
             onClick={() => window.open(f.url, '_blank', 'noopener,noreferrer')}
@@ -86,11 +85,36 @@ const MiniUpload = ({ fileKey, uploadedFiles, handleFileUpload, removeFile, disa
           >
             {f.name}
           </button>
-          {!disabled&&<button type="button" onClick={()=>removeFile(fileKey,i)} className="text-red-500 hover:text-red-700"><X size={12}/></button>}
+          {!disabled&&<button type="button" onClick={()=>removeFile(fileKey,i)} className="text-red-500 hover:text-red-700 ml-auto"><X size={12}/></button>}
         </div>
       ))}
-      {!disabled&& (
-        <label className={`inline-flex items-center gap-1.5 text-[11px] font-bold cursor-pointer px-2.5 py-1.5 rounded-lg border transition-all duration-150 ${required&&files.length===0?'border-red-400 text-red-600 bg-red-50 hover:bg-red-100':'border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100'}`}>
+      {/* Các file đang tải lên — hiển thị progress bar ngay tại chỗ */}
+      {pendingEntries.map(([name, pct]) => (
+        <div key={name} className="text-[10px] bg-blue-50 border border-blue-200 rounded px-2 py-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Loader2 size={11} className="shrink-0 text-blue-500 animate-spin" />
+            <span className="truncate max-w-[130px] text-blue-700 font-semibold">{name}</span>
+            <span className="ml-auto text-blue-600 font-bold">{pct as number}%</span>
+          </div>
+          <div className="w-full bg-blue-100 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="h-1.5 bg-blue-500 rounded-full transition-all duration-200"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      ))}
+      {/* Các file bị lỗi upload */}
+      {errorEntries.map(([name]) => (
+        <div key={name} className="flex items-center gap-1.5 text-[10px] bg-red-50 border border-red-200 rounded px-2 py-1 text-red-700 font-semibold">
+          <AlertCircle size={11} className="shrink-0 text-red-500" />
+          <span className="truncate max-w-[120px]" title={name}>{name}</span>
+          <span className="ml-auto text-red-500 text-[9px] font-normal">Lỗi — thử lại</span>
+        </div>
+      ))}
+      {/* Nút upload */}
+      {!disabled && (
+        <label className="inline-flex items-center gap-1.5 text-[11px] font-bold cursor-pointer px-2.5 py-1.5 rounded-lg border transition-all duration-150 border-gray-300 text-gray-600 bg-gray-50 hover:bg-gray-100">
           <Upload size={12}/>
           Đẩy file minh chứng
           <input type="file" accept=".pdf,.jpg,.jpeg,.png" multiple className="hidden" onChange={e=>handleFileUpload(fileKey,e)}/>
@@ -114,48 +138,6 @@ const SectionHeaderRow = ({ tt, title, maxScore }: { tt:string; title:string; ma
 
 const LockedScore = () => <span className="text-[10px] text-red-500 italic font-semibold">(Hủy điểm)</span>;
 
-interface EvaluationTableGridProps {
-  currentUserRole: 'student' | 'class'; setIsClassEdited: (v:boolean)=>void; isReadOnly: boolean;
-  fieldErrors?: Record<string, string>;
-  svScores: {sec1:number;sec2:number;sec3:number;sec4:number;sec5:number;total:number};
-  classScores: {sec1:number;sec2:number;sec3:number;sec4:number;sec5:number;total:number};
-  svStudyAttitude:string; setSvStudyAttitude:(v:string)=>void;
-  svNckh:boolean; setSvNckh:(v:boolean)=>void; svOlympic:boolean; setSvOlympic:(v:boolean)=>void;
-  svCreative:boolean; setSvCreative:(v:boolean)=>void; svAcademicRank:string; setSvAcademicRank:(v:string)=>void;
-  classStudyAttitude:string; setClassStudyAttitude:(v:string)=>void;
-  classNckh:boolean; setClassNckh:(v:boolean)=>void; classOlympic:boolean; setClassOlympic:(v:boolean)=>void;
-  classCreative:boolean; setClassCreative:(v:boolean)=>void; classAcademicRank:string; setClassAcademicRank:(v:string)=>void;
-  isSvViolationSec1:boolean; setIsSvViolationSec1:(v:boolean)=>void; isClassViolationSec1:boolean; setIsClassViolationSec1:(v:boolean)=>void;
-  svNoViolationScore:number; setSvNoViolationScore:(v:number)=>void; svDeductions:number[];
-  handleDeductionChange:(isSv:boolean,idx:number,val:number)=>void;
-  classNoViolationScore:number; setClassNoViolationScore:(v:number)=>void; classDeductions:number[]; deductionLabels:string[];
-  isSvViolationSec2:boolean; setIsSvViolationSec2:(v:boolean)=>void; isClassViolationSec2:boolean; setIsClassViolationSec2:(v:boolean)=>void;
-  svActivity1:string; setSvActivity1:(v:string)=>void; svActivity2:string; setSvActivity2:(v:string)=>void;
-  svActivity3:string; setSvActivity3:(v:string)=>void; svActivity4:string; setSvActivity4:(v:string)=>void;
-  svRewardPoints:number; setSvRewardPoints:(v:number)=>void;
-  classActivity1:string; setClassActivity1:(v:string)=>void; classActivity2:string; setClassActivity2:(v:string)=>void;
-  classActivity3:string; setClassActivity3:(v:string)=>void; classActivity4:string; setClassActivity4:(v:string)=>void;
-  classRewardPoints:number; setClassRewardPoints:(v:number)=>void;
-  isSvViolationSec3:boolean; setIsSvViolationSec3:(v:boolean)=>void; isClassViolationSec3:boolean; setIsClassViolationSec3:(v:boolean)=>void;
-  svPolicy:string; setSvPolicy:(v:string)=>void; svSolidarity:string; setSvSolidarity:(v:string)=>void; svLocality:string; setSvLocality:(v:string)=>void;
-  classPolicy:string; setClassPolicy:(v:string)=>void; classSolidarity:string; setClassSolidarity:(v:string)=>void; classLocality:string; setClassLocality:(v:string)=>void;
-  isSvViolationSec4:boolean; setIsSvViolationSec4:(v:boolean)=>void; isClassViolationSec4:boolean; setIsClassViolationSec4:(v:boolean)=>void;
-  svRoleType:'cadre'|'student'; setSvRoleType:(v:'cadre'|'student')=>void;
-  svCadrePosition:'a1'|'a2'; setSvCadrePosition:(v:'a1'|'a2')=>void;
-  svCadrePerformance:string; setSvCadrePerformance:(v:string)=>void;
-  svManagementLevel:string; setSvManagementLevel:(v:string)=>void;
-  svClassParticipation:number; setSvClassParticipation:(v:number)=>void;
-  svSpecialAchievement:string; setSvSpecialAchievement:(v:string)=>void;
-  classRoleType:'cadre'|'student'; setClassRoleType:(v:'cadre'|'student')=>void;
-  classCadrePosition:'a1'|'a2'; setClassCadrePosition:(v:'a1'|'a2')=>void;
-  classCadrePerformance:string; setClassCadrePerformance:(v:string)=>void;
-  classManagementLevel:string; setClassManagementLevel:(v:string)=>void;
-  classClassParticipation:number; setClassClassParticipation:(v:number)=>void;
-  classSpecialAchievement:string; setClassSpecialAchievement:(v:string)=>void;
-  isSvViolationSec5:boolean; setIsSvViolationSec5:(v:boolean)=>void; isClassViolationSec5:boolean; setIsClassViolationSec5:(v:boolean)=>void;
-  uploadedFiles:Record<string,UploadedEvidenceFile[]>; handleFileUpload:(k:string,e:React.ChangeEvent<HTMLInputElement>)=>void; removeFile:(k:string,i:number)=>void;
-}
-
 export const EvaluationTableGrid = (props: EvaluationTableGridProps) => {
   const { currentUserRole, setIsClassEdited, isReadOnly, fieldErrors = {}, svScores, classScores,
     svStudyAttitude, setSvStudyAttitude, svNckh, setSvNckh, svOlympic, setSvOlympic, svCreative, setSvCreative, svAcademicRank, setSvAcademicRank,
@@ -175,7 +157,7 @@ export const EvaluationTableGrid = (props: EvaluationTableGridProps) => {
     classRoleType, setClassRoleType, classCadrePosition, setClassCadrePosition, classCadrePerformance, setClassCadrePerformance,
     classManagementLevel, setClassManagementLevel, classClassParticipation, setClassClassParticipation, classSpecialAchievement, setClassSpecialAchievement,
     isSvViolationSec5, setIsSvViolationSec5, isClassViolationSec5, setIsClassViolationSec5,
-    uploadedFiles, handleFileUpload, removeFile
+    uploadedFiles, handleFileUpload, removeFile, fileUploadProgress
   } = props;
 
   const [notes, setNotes] = useState<Record<string,string>>({});
@@ -324,19 +306,19 @@ export const EvaluationTableGrid = (props: EvaluationTableGridProps) => {
                 {svNckh && (
                   <div className="mt-2 border-t pt-1.5 border-gray-100">
                     <span className="text-[10px] font-bold text-gray-600 block">Minh chứng NCKH:</span>
-                    <MiniUpload fileKey="sv_nckh" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required/>
+                    <MiniUpload fileKey="sv_nckh" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required fileUploadProgress={fileUploadProgress}/>
                   </div>
                 )}
                 {svOlympic && (
                   <div className="mt-2 border-t pt-1.5 border-gray-100">
                     <span className="text-[10px] font-bold text-gray-600 block">Minh chứng Olympic:</span>
-                    <MiniUpload fileKey="sv_olympic" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required/>
+                    <MiniUpload fileKey="sv_olympic" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required fileUploadProgress={fileUploadProgress}/>
                   </div>
                 )}
                 {svCreative && (
                   <div className="mt-2 border-t pt-1.5 border-gray-100">
                     <span className="text-[10px] font-bold text-gray-600 block">Minh chứng Hoạt động học thuật:</span>
-                    <MiniUpload fileKey="sv_creative" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required/>
+                    <MiniUpload fileKey="sv_creative" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required fileUploadProgress={fileUploadProgress}/>
                   </div>
                 )}
               </td>
@@ -438,7 +420,7 @@ export const EvaluationTableGrid = (props: EvaluationTableGridProps) => {
                 {svRewardPoints > 0 && (
                   <div className="mt-2 border-t pt-1.5 border-gray-100">
                     <span className="text-[10px] font-bold text-gray-600 block">Minh chứng Khen thưởng:</span>
-                    <MiniUpload fileKey="sv_reward" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable||isSvViolationSec3} required={svRewardPoints>0}/>
+                    <MiniUpload fileKey="sv_reward" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable||isSvViolationSec3} required={svRewardPoints>0} fileUploadProgress={fileUploadProgress}/>
                   </div>
                 )}
               </td>
@@ -462,13 +444,13 @@ export const EvaluationTableGrid = (props: EvaluationTableGridProps) => {
                   {row.key==='iv1'&&svPolicy==='GOOD_WITH_REWARD'&& (
                     <div className="mt-2 border-t pt-1.5 border-gray-100">
                       <span className="text-[10px] font-bold text-gray-600 block">Minh chứng tuyên truyền xuất sắc:</span>
-                      <MiniUpload fileKey="sv_policy" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required/>
+                      <MiniUpload fileKey="sv_policy" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required fileUploadProgress={fileUploadProgress}/>
                     </div>
                   )}
                   {row.key==='iv2'&&svSolidarity==='excellent_achievements'&& (
                     <div className="mt-2 border-t pt-1.5 border-gray-100">
                       <span className="text-[10px] font-bold text-gray-600 block">Minh chứng thành tích đặc biệt:</span>
-                      <MiniUpload fileKey="sv_solidarity" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required/>
+                      <MiniUpload fileKey="sv_solidarity" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required fileUploadProgress={fileUploadProgress}/>
                     </div>
                   )}
                 </td>
@@ -535,7 +517,7 @@ export const EvaluationTableGrid = (props: EvaluationTableGridProps) => {
                   {svCadrePerformance==='excellent'&&svRoleType==='cadre'&& (
                     <div className="mt-2 border-t pt-1.5 border-gray-100">
                       <span className="text-[10px] font-bold text-gray-600 block">Minh chứng hoàn thành xuất sắc:</span>
-                      <MiniUpload fileKey="sv_cadre_perf" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required/>
+                      <MiniUpload fileKey="sv_cadre_perf" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required fileUploadProgress={fileUploadProgress}/>
                     </div>
                   )}
                 </td>
@@ -578,7 +560,7 @@ export const EvaluationTableGrid = (props: EvaluationTableGridProps) => {
                   {(svSpecialAchievement==='national_intl'||svSpecialAchievement==='provincial')&&svRoleType==='student'&& (
                     <div className="mt-2 border-t pt-1.5 border-gray-100">
                       <span className="text-[10px] font-bold text-gray-600 block">Minh chứng thành tích cấp Tỉnh/QG:</span>
-                      <MiniUpload fileKey="sv_special_ach" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required/>
+                      <MiniUpload fileKey="sv_special_ach" uploadedFiles={uploadedFiles} handleFileUpload={handleFileUpload} removeFile={removeFile} disabled={!isSvEditable} required fileUploadProgress={fileUploadProgress}/>
                     </div>
                   )}
                 </td>

@@ -2,23 +2,9 @@
 
 import { useState } from 'react';
 import { Check, ExternalLink, FileImage, FileText, X } from 'lucide-react';
+import type { ReviewEvidence, EvidenceReviewModalProps } from '@/types/admin';
 
-export interface ReviewEvidence {
-  id: string;
-  fileName: string;
-  fileType: 'image' | 'pdf';
-  url: string;
-  status: 'pending' | 'approved' | 'rejected';
-  rejectReason?: string;
-}
-
-interface EvidenceReviewModalProps {
-  isOpen: boolean;
-  evidences: ReviewEvidence[];
-  onClose: () => void;
-  onApprove: (evidenceId: string) => void;
-  onReject: (evidenceId: string, reason: string) => void;
-}
+export type { ReviewEvidence };
 
 export default function EvidenceReviewModal({
   isOpen,

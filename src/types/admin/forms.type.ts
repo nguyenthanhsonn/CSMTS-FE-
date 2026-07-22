@@ -30,3 +30,11 @@ export interface StudentFormValues {
   admissionYear: string;
   role: 'admin' | 'class_council';
 }
+
+export type SemesterFormState = {
+  year: string;
+  semester: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+};

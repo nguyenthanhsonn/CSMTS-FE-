@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { API_Admin } from '../../api/API_Admin';
-import type { Class, ClassFormValues, Faculty, Major } from '../../types';
+import type { Class, ClassFormValues, Faculty, Major, ClassTableRow } from '../../types';
 import ModalCreateClass from '../../components/admin/modalCreateClass';
 import ModalConfirm from '../../components/common/modalConfirm';
 import SearchFilterBar from '../../components/admin/SearchFilterBar';
@@ -11,11 +11,6 @@ import DataTable, { type Column } from '../../components/admin/DataTable';
 import { getUserFriendlyError, toArray } from '../../utils/adminData';
 import { AdminClassList } from './ClassList';
 import { useAdminUrlState } from '../../utils/adminUrlState';
-
-type ClassTableRow = Class & {
-  majorName: string;
-  facultyName: string;
-};
 
 export const AdminClasses = () => {
   const [classes, setClasses] = useState<ClassTableRow[]>([]);

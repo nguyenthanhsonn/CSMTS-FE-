@@ -13,8 +13,8 @@ export type {
 } from './evaluation-criteria.type';
 export type { CompleteEvaluation, EvaluationForm, EvaluationPeriod } from './evaluation-form.type';
 export type { Evidence } from './evidence.type';
-export type { Student, StudentInfo } from './student-user.type';
-export type { EvidenceFile } from './evidence-file.type';
+export type { Student, StudentInfo, ManagedClass, ProfileUser, StudentProfilePayload } from './student-user.type';
+export type { EvidenceFile, UploadedEvidenceFile } from './evidence-file.type';
 export type { HistoryItem } from './history-item.type';
 export type {
   AcademicYear,
@@ -46,4 +46,7 @@ export type {
   ReviewerCommentsCardProps,
   RankBenefitsCardProps,
   EvidenceGroupCardProps,
+  GridDeductionStepperProps,
+  EvaluationTableGridProps,
+  EvaluationPageProps,
 } from './components.type';

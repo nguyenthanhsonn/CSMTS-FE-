@@ -5,11 +5,7 @@ import { Lock, X, Eye, EyeOff, Loader2, AlertCircle, CheckCircle, KeyRound } fro
 import { API_Auth } from '../../api/API_Auth';
 import { useAuthStore } from '../../store/authStore';
 import { getUserFriendlyError } from '../../utils/errorHelper';
-
-interface ChangePasswordModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+import type { ChangePasswordModalProps } from '@/types/common';
 
 export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
   const logout = useAuthStore((state) => state.logout);

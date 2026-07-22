@@ -2,17 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
-
-interface CustomSelectProps {
-  value: string;
-  onChange: (val: string) => void;
-  options: { id: string; name: string }[];
-  label?: string;
-  required?: boolean;
-  disabled?: boolean;
-  className?: string;
-  selectClassName?: string;
-}
+import type { CustomSelectProps } from '@/types/common';
 
 export const CustomSelect = ({
   value,

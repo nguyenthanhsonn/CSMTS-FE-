@@ -8,10 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import { ChangePasswordModal } from '../auth/changePassword';
 import { API_Student } from '../../api/API_Student';
 import { API_URL } from '../../api/api';
-
-interface HeaderProps {
-  onMenuClick: () => void;
-}
+import type { HeaderProps } from '@/types/common';
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { user, logout } = useAuthStore();

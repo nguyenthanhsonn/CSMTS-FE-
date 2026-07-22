@@ -1,19 +1,7 @@
 'use client';
 
-import React from 'react';
 import { Search, ChevronDown } from 'lucide-react';
-
-export interface SearchFilterBarProps {
-  searchValue: string;
-  onSearchChange: (value: string) => void;
-  filterValue?: string;
-  onFilterChange?: (value: string) => void;
-  searchPlaceholder: string;
-  filterOptions?: { label: string; value: string }[];
-  filterLabel?: string;
-  children?: React.ReactNode;
-  variant?: 'card' | 'inline';
-}
+import type { SearchFilterBarProps } from '@/types/admin';
 
 export default function SearchFilterBar({
   searchValue,

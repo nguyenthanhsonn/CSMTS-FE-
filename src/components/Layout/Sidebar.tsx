@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import type { SidebarProps } from '@/types/common';
 
 const studentMenuItems = [
   { path: '/student/evaluation', icon: FileText, label: 'Phiếu đánh giá' },
@@ -36,11 +37,6 @@ const adminMenuItems = [
 const classCouncilMenuItems = [
   { path: '/class_council', icon: Users, label: 'Lớp phụ trách' },
 ];
-
-interface SidebarProps {
-  open: boolean;
-  onClose: () => void;
-}
 
 export const Sidebar = ({ open, onClose }: SidebarProps) => {
   const pathname = usePathname();

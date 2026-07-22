@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  allowedDevOrigins: ['10.36.120.48'],
+  allowedDevOrigins: ['10.36.120.48', '192.168.100.17'],
 
   async rewrites() {
     const backendUrl = process.env.BACKEND_API_URL || 'http://10.36.120.154:5050/api/v1';

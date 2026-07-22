@@ -2,15 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Minus, Lock, AlertCircle, Upload, X, ChevronDown } from 'lucide-react';
+import type { CouncilDeductionStepperProps as DeductionStepperProps, CouncilCriteriaReviewTableProps } from '@/types/admin';
 
 const DEDUCTION_WEIGHTS = [10, 3, 5, 5, 5, 5, 5, 10, 20];
-
-interface DeductionStepperProps {
-  isSv: boolean; index: number; value: number;
-  onChange: (val: number) => void; disabled: boolean;
-  weight: number; noViolationScore: number; allDeductions: number[];
-  currentUserRole: 'student' | 'class'; isReadOnly: boolean;
-}
 const DeductionStepper = ({ isSv, index, value, onChange, disabled, weight, noViolationScore, allDeductions, currentUserRole, isReadOnly }: DeductionStepperProps) => {
   const sumOther = allDeductions.reduce((s, c, i) => i === index ? s : s + (Number(c) || 0) * DEDUCTION_WEIGHTS[i], 0);
   const baseScore = Number(noViolationScore) || 0;
@@ -100,47 +94,6 @@ const SectionHeaderRow = ({ tt, title, maxScore }: { tt:string; title:string; ma
 
 
 const LockedScore = () => <span className="text-[10px] text-red-500 italic font-semibold">(Hủy điểm)</span>;
-
-interface CouncilCriteriaReviewTableProps {
-  currentUserRole: 'student' | 'class'; setIsClassEdited: (v:boolean)=>void; isReadOnly: boolean;
-  svScores: {sec1:number;sec2:number;sec3:number;sec4:number;sec5:number;total:number};
-  classScores: {sec1:number;sec2:number;sec3:number;sec4:number;sec5:number;total:number};
-  svStudyAttitude:string; setSvStudyAttitude:(v:string)=>void;
-  svNckh:boolean; setSvNckh:(v:boolean)=>void; svOlympic:boolean; setSvOlympic:(v:boolean)=>void;
-  svCreative:boolean; setSvCreative:(v:boolean)=>void; svAcademicRank:string; setSvAcademicRank:(v:string)=>void;
-  classStudyAttitude:string; setClassStudyAttitude:(v:string)=>void;
-  classNckh:boolean; setClassNckh:(v:boolean)=>void; classOlympic:boolean; setClassOlympic:(v:boolean)=>void;
-  classCreative:boolean; setClassCreative:(v:boolean)=>void; classAcademicRank:string; setClassAcademicRank:(v:string)=>void;
-  isSvViolationSec1:boolean; setIsSvViolationSec1:(v:boolean)=>void; isClassViolationSec1:boolean; setIsClassViolationSec1:(v:boolean)=>void;
-  svNoViolationScore:number; setSvNoViolationScore:(v:number)=>void; svDeductions:number[];
-  handleDeductionChange:(isSv:boolean,idx:number,val:number)=>void;
-  classNoViolationScore:number; setClassNoViolationScore:(v:number)=>void; classDeductions:number[]; deductionLabels:string[];
-  isSvViolationSec2:boolean; setIsSvViolationSec2:(v:boolean)=>void; isClassViolationSec2:boolean; setIsClassViolationSec2:(v:boolean)=>void;
-  svActivity1:string; setSvActivity1:(v:string)=>void; svActivity2:string; setSvActivity2:(v:string)=>void;
-  svActivity3:string; setSvActivity3:(v:string)=>void; svActivity4:string; setSvActivity4:(v:string)=>void;
-  svRewardPoints:number; setSvRewardPoints:(v:number)=>void;
-  classActivity1:string; setClassActivity1:(v:string)=>void; classActivity2:string; setClassActivity2:(v:string)=>void;
-  classActivity3:string; setClassActivity3:(v:string)=>void; classActivity4:string; setClassActivity4:(v:string)=>void;
-  classRewardPoints:number; setClassRewardPoints:(v:number)=>void;
-  isSvViolationSec3:boolean; setIsSvViolationSec3:(v:boolean)=>void; isClassViolationSec3:boolean; setIsClassViolationSec3:(v:boolean)=>void;
-  svPolicy:string; setSvPolicy:(v:string)=>void; svSolidarity:string; setSvSolidarity:(v:string)=>void; svLocality:string; setSvLocality:(v:string)=>void;
-  classPolicy:string; setClassPolicy:(v:string)=>void; classSolidarity:string; setClassSolidarity:(v:string)=>void; classLocality:string; setClassLocality:(v:string)=>void;
-  isSvViolationSec4:boolean; setIsSvViolationSec4:(v:boolean)=>void; isClassViolationSec4:boolean; setIsClassViolationSec4:(v:boolean)=>void;
-  svRoleType:'cadre'|'student'; setSvRoleType:(v:'cadre'|'student')=>void;
-  svCadrePosition:'a1'|'a2'; setSvCadrePosition:(v:'a1'|'a2')=>void;
-  svCadrePerformance:string; setSvCadrePerformance:(v:string)=>void;
-  svManagementLevel:string; setSvManagementLevel:(v:string)=>void;
-  svClassParticipation:number; setSvClassParticipation:(v:number)=>void;
-  svSpecialAchievement:string; setSvSpecialAchievement:(v:string)=>void;
-  classRoleType:'cadre'|'student'; setClassRoleType:(v:'cadre'|'student')=>void;
-  classCadrePosition:'a1'|'a2'; setClassCadrePosition:(v:'a1'|'a2')=>void;
-  classCadrePerformance:string; setClassCadrePerformance:(v:string)=>void;
-  classManagementLevel:string; setClassManagementLevel:(v:string)=>void;
-  classClassParticipation:number; setClassClassParticipation:(v:number)=>void;
-  classSpecialAchievement:string; setClassSpecialAchievement:(v:string)=>void;
-  isSvViolationSec5:boolean; setIsSvViolationSec5:(v:boolean)=>void; isClassViolationSec5:boolean; setIsClassViolationSec5:(v:boolean)=>void;
-  uploadedFiles:Record<string,string[]>; handleFileUpload:(k:string,e:React.ChangeEvent<HTMLInputElement>)=>void; removeFile:(k:string,i:number)=>void;
-}
 
 export const CouncilCriteriaReviewTable = (props: CouncilCriteriaReviewTableProps) => {
   const { currentUserRole, setIsClassEdited, isReadOnly, svScores, classScores,

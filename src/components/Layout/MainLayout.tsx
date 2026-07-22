@@ -1,12 +1,9 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
-
-interface MainLayoutProps {
-  children: ReactNode;
-}
+import type { MainLayoutProps } from '@/types/common';
 
 export const MainLayout = ({ children }: MainLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);

@@ -78,6 +78,8 @@ export const EvaluationFormQD4185 = () => {
 	  // File Upload State
 	  const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedEvidenceFile[]>>({});
 	  const [uploadingEvidence, setUploadingEvidence] = useState<string | null>(null);
+	  // fileProgress: { [criteriaKey]: { [fileName]: percent 0-100 | 'done' | 'error' } }
+	  const [fileProgress, setFileProgress] = useState<Record<string, Record<string, number | 'done' | 'error'>>>({});
 
 		  const mapEvidenceCriteriaCode = (criteriaKey: string) => {
 	    if (criteriaKey.startsWith('sv_nckh') || criteriaKey.startsWith('sv_olympic') || criteriaKey.startsWith('sv_creative')) {
@@ -110,22 +112,12 @@ export const EvaluationFormQD4185 = () => {
 	    return editable;
 	  };
 
-	  const refreshCurrentEvaluationState = async () => {
-	    if (!evaluationId) return true;
-	    const accessToken = localStorage.getItem('accessToken');
-	    if (!accessToken || accessToken === 'mock-access-token') return true;
-
-	    const detailRes = await API_Student.getEvaluationDetail(accessToken, evaluationId);
-	    const detail = (detailRes.data || detailRes) as any;
-	    return applyEvaluationLockState(detail);
-	  };
-		  
 		  const handleFileUpload = async (criteriaKey: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     const fileList = Array.from(files);
-    
+
     // Client-side validations (Size & Type)
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
     for (const file of fileList) {
@@ -143,35 +135,79 @@ export const EvaluationFormQD4185 = () => {
       }
     }
 
+    // Validate trạng thái phiếu bằng state local (không gọi lại API)
+    if (isReadOnly || isLocked) {
+      toast.error('Phiếu đánh giá hiện không ở trạng thái được chỉnh sửa.');
+      e.target.value = '';
+      return;
+    }
+
 	    try {
 	      setUploadingEvidence(criteriaKey);
 	      setValidationError(null);
 
-	      const canUpload = await refreshCurrentEvaluationState();
-	      if (!canUpload) {
-	        toast.error('Phiếu đánh giá hiện không ở trạng thái được chỉnh sửa.');
-	        return;
-	      }
-
-	      const uploadedItems: UploadedEvidenceFile[] = [];
-	      for (const file of fileList) {
-		        const { secureUrl, publicId } = await uploadEvidenceFile(file);
-		        await API_Student.linkEvidenceUrl({
-		          criteriaCode: mapEvidenceCriteriaCode(criteriaKey),
-		          imageUrl: secureUrl,
-		          publicId,
-		        });
-	        uploadedItems.push({
-	          name: file.name,
-	          url: secureUrl,
-	          type: file.type,
-	        });
-	      }
-
-	      setUploadedFiles(prev => ({
+	      // Khởi tạo progress 0 cho tất cả file cùng lúc
+	      setFileProgress(prev => ({
 	        ...prev,
-	        [criteriaKey]: [...(prev[criteriaKey] || []), ...uploadedItems]
+	        [criteriaKey]: Object.fromEntries(fileList.map(f => [f.name, 0])),
 	      }));
+
+	      // Upload song song toàn bộ file — Promise.allSettled không bị chặn khi 1 file lỗi
+	      const results = await Promise.allSettled(
+	        fileList.map(async (file) => {
+	          const { secureUrl, publicId } = await uploadEvidenceFile(file, {
+	            onProgress: (percent) => {
+	              setFileProgress(prev => ({
+	                ...prev,
+	                [criteriaKey]: { ...(prev[criteriaKey] || {}), [file.name]: percent },
+	              }));
+	            },
+	          });
+
+	          await API_Student.linkEvidenceUrl({
+	            criteriaCode: mapEvidenceCriteriaCode(criteriaKey),
+	            imageUrl: secureUrl,
+	            publicId,
+	          });
+
+	          // Đánh dấu file này đã xong
+	          setFileProgress(prev => ({
+	            ...prev,
+	            [criteriaKey]: { ...(prev[criteriaKey] || {}), [file.name]: 'done' },
+	          }));
+
+	          return { name: file.name, url: secureUrl, type: file.type } as UploadedEvidenceFile;
+	        })
+	      );
+
+	      // Cập nhật state chỉ với các file upload thành công
+	      const successItems: UploadedEvidenceFile[] = [];
+	      const failedNames: string[] = [];
+
+	      results.forEach((result, idx) => {
+	        if (result.status === 'fulfilled') {
+	          successItems.push(result.value);
+	        } else {
+	          failedNames.push(fileList[idx].name);
+	          setFileProgress(prev => ({
+	            ...prev,
+	            [criteriaKey]: { ...(prev[criteriaKey] || {}), [fileList[idx].name]: 'error' },
+	          }));
+	        }
+	      });
+
+	      if (successItems.length > 0) {
+	        setUploadedFiles(prev => ({
+	          ...prev,
+	          [criteriaKey]: [...(prev[criteriaKey] || []), ...successItems],
+	        }));
+	      }
+
+	      if (failedNames.length > 0) {
+	        const msg = `Không thể tải lên: ${failedNames.join(', ')}. Vui lòng thử lại các file này.`;
+	        setValidationError(msg);
+	        window.scrollTo({ top: 0, behavior: 'smooth' });
+	      }
 	    } catch (err: any) {
 	      const message = getUserFriendlyError(err, 'Không thể tải minh chứng. Vui lòng thử lại.');
 	      if (err.statusCode === 409 || message.includes('khóa') || message.includes('locked')) {
@@ -1710,6 +1746,7 @@ export const EvaluationFormQD4185 = () => {
             uploadedFiles={uploadedFiles}
             handleFileUpload={handleFileUpload}
             removeFile={removeFile}
+            fileUploadProgress={fileProgress}
           />
 
           {/* Action Buttons */}

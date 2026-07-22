@@ -36,17 +36,26 @@ export type {
   UserListQuery,
 } from './api.interface';
 
-/** Người dùng trong màn quản trị. */
-export type AdminUser = StudentManagementItem;
+/** Người dùng trong hệ thống quản trị. */
+export type AdminUser = StudentManagementItem & {
+  role?: string;
+  isActive?: boolean;
+};
 
-/** Khoa trong màn quản trị. */
-export type AdminFaculty = Faculty;
+/** Lớp quản trị mở rộng từ Class. */
+export type AdminClass = Class & {
+  studentCount?: number;
+};
 
-/** Ngành trong màn quản trị. */
-export type AdminMajor = Major;
+/** Ngành quản trị mở rộng từ Major. */
+export type AdminMajor = Major & {
+  facultyName?: string;
+};
 
-/** Lớp trong màn quản trị. */
-export type AdminClass = Class;
+/** Khoa quản trị mở rộng từ Faculty. */
+export type AdminFaculty = Faculty & {
+  majorCount?: number;
+};
 
 /** Phiếu đánh giá trong danh sách quản trị. */
 export type AdminEvaluationItem = {
@@ -67,4 +76,12 @@ export type Post = {
   content: string;
   authorId?: string;
   createdAt: string;
+};
+
+/** Kế quả phân trang dạng danh sách. */
+export type PagedResult<T> = {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
 };

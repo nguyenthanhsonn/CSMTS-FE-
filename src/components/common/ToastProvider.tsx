@@ -2,21 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useMemo, useState, useRef } from 'react';
 import { CheckCircle, Info, X, XCircle } from 'lucide-react';
-
-type ToastType = 'success' | 'error' | 'info';
-
-interface ToastItem {
-  id: number;
-  message: string;
-  type: ToastType;
-  duration: number;
-}
-
-interface ToastContextValue {
-  success: (message: string) => void;
-  error: (message: string) => void;
-  info: (message: string) => void;
-}
+import type { ToastType, ToastItem, ToastContextValue } from '@/types/common';
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 const TOAST_DURATION_MS = 4200;

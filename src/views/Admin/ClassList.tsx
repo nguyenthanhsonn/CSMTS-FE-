@@ -3,18 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Loader2, AlertCircle, ArrowLeft, UserPlus, X } from 'lucide-react';
 import { API_Admin } from '../../api/API_Admin';
-import { ClassListStudentItem, Class, Faculty, Major, StudentManagementItem } from '../../types';
+import { ClassListStudentItem, Class, Faculty, Major, StudentManagementItem, AdminClassListProps } from '../../types';
 import ModalConfirm from '../../components/common/modalConfirm';
 import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import DataTable, { type Column } from '../../components/admin/DataTable';
 import ModalAddStudent from '../../components/admin/modalAddStudent';
 import { getUserFriendlyError, toArray } from '../../utils/adminData';
 import { useAdminUrlState } from '../../utils/adminUrlState';
-
-interface AdminClassListProps {
-  preSelectedClassId?: string;
-  onBack?: () => void;
-}
 
 export const AdminClassList = ({ preSelectedClassId, onBack }: AdminClassListProps) => {
   const { getPage, getValue, setQuery } = useAdminUrlState();

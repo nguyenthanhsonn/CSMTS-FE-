@@ -3,19 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Edit, Loader2, Lock, Plus, Power, Unlock } from 'lucide-react';
 import { API_Admin } from '../../api/API_Admin';
-import type { AdminSemester, SemesterPayload } from '../../types';
+import type { AdminSemester, SemesterPayload, SemesterFormState } from '../../types';
 import DataTable, { type Column } from '../../components/admin/DataTable';
 import ModalConfirm from '../../components/common/modalConfirm';
 import { getUserFriendlyError, toArray } from '../../utils/adminData';
 import { useAdminUrlState } from '../../utils/adminUrlState';
-
-type SemesterFormState = {
-  year: string;
-  semester: string;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-};
 
 const defaultForm: SemesterFormState = {
   year: String(new Date().getFullYear()),

@@ -1,30 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import type { Column, DataTableProps } from '@/types/admin';
 
-export interface Column<T> {
-  key: keyof T | 'actions';
-  label: string;
-  width?: string;
-  /** If true, this column's value is used as the primary card title on mobile */
-  cardTitle?: boolean;
-  /** If true, this column is hidden in the card label:value list (e.g. the title column already shown prominently) */
-  cardHideLabel?: boolean;
-  render?: (value: any, row: T) => React.ReactNode;
-}
-
-export interface DataTableProps<T> {
-  columns: Column<T>[];
-  data: T[];
-  pageSize?: number;
-  emptyText?: string;
-  minHeight?: number;
-  showSummary?: boolean;
-  paginationAlign?: 'left' | 'right';
-  currentPage?: number;
-  onPageChange?: (page: number) => void;
-  onRowClick?: (row: T) => void;
-}
+export type { Column };
 
 export default function DataTable<T>({
   columns,

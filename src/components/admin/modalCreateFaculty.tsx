@@ -4,16 +4,8 @@ import { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { X, Hash, BookOpen, Download } from 'lucide-react';
-import type { Faculty, FacultyFormValues } from '../../types';
+import type { FacultyFormValues, ModalCreateFacultyProps } from '../../types';
 import ModalImportFaculty from './modalImportFaculty';
-
-interface ModalCreateFacultyProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (values: FacultyFormValues) => void;
-  editData?: Faculty | null;
-  onImported?: () => void;
-}
 
 const validationSchema = Yup.object({
   code: Yup.string()

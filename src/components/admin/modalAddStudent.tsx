@@ -4,25 +4,8 @@ import { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { X, Download } from 'lucide-react';
-import type { Class, ClassListStudentItem } from '../../types';
+import type { ModalAddStudentProps, AddStudentFormValues } from '../../types';
 import ModalImportExcel from './modalImportExcel';
-
-interface ModalAddStudentProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (student: Omit<ClassListStudentItem, 'id'> & { classId: string }) => void;
-  defaultClassId?: string;
-  classes?: Class[];
-  onImportSuccess?: () => void;
-}
-
-interface FormValues {
-  studentCode: string;
-  fullName: string;
-  dateOfBirth: string;
-  phoneNumber: string;
-  classId: string;
-}
 
 const validationSchema = Yup.object({
   studentCode: Yup.string()
@@ -48,7 +31,7 @@ export default function ModalAddStudent({
 }: ModalAddStudentProps) {
   const [importOpen, setImportOpen] = useState(false);
 
-  const formik = useFormik<FormValues>({
+  const formik = useFormik<AddStudentFormValues>({
     initialValues: {
       studentCode: '',
       fullName: '',
@@ -59,7 +42,7 @@ export default function ModalAddStudent({
     validationSchema,
     validateOnBlur: false,
     validateOnChange: false,
-    onSubmit: (values: FormValues, { resetForm }: { resetForm: (options?: any) => void }) => {
+    onSubmit: (values: AddStudentFormValues, { resetForm }: { resetForm: (options?: any) => void }) => {
       onSubmit({
         studentCode: values.studentCode,
         fullName: values.fullName,

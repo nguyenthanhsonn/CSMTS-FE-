@@ -2,23 +2,9 @@
 
 import { ClipboardCheck } from 'lucide-react';
 import EvaluationStatusStepper from '@/components/common/EvaluationStatusStepper';
+import type { StudentReviewStatus, CouncilStudentReview, StudentReviewTableProps } from '@/types/admin';
 
-export type StudentReviewStatus = 'not_submitted' | 'submitted';
-
-export interface CouncilStudentReview {
-  id: string;
-  code: string;
-  fullName: string;
-  selfScore: number | null;
-  status: StudentReviewStatus;
-  workflowStatus?: string;
-  statusLabel?: string;
-}
-
-interface StudentReviewTableProps {
-  students: CouncilStudentReview[];
-  onReview: (studentId: string) => void;
-}
+export type { StudentReviewStatus, CouncilStudentReview };
 
 const statusMeta: Record<StudentReviewStatus, { label: string; className: string }> = {
   not_submitted: { label: 'Chưa nộp', className: 'bg-[#F1F3F5] text-[#495057]' },

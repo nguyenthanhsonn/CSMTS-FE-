@@ -2,17 +2,9 @@
 
 import { Search } from 'lucide-react';
 import CustomSelect from '../common/CustomSelect';
+import type { ReviewStatusFilter, ClassReviewFilterBarProps } from '@/types/admin';
 
-export type ReviewStatusFilter = 'all' | 'not_submitted' | 'submitted';
-
-interface ClassReviewFilterBarProps {
-  semester: string;
-  status: ReviewStatusFilter;
-  keyword: string;
-  onSemesterChange: (value: string) => void;
-  onStatusChange: (value: ReviewStatusFilter) => void;
-  onKeywordChange: (value: string) => void;
-}
+export type { ReviewStatusFilter };
 
 const semesterOptions = [
   { id: '2025-2026-hk1', name: 'HK1 2025-2026' },

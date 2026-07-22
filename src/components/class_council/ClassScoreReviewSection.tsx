@@ -2,23 +2,7 @@
 
 import { AlertCircle, Paperclip } from 'lucide-react';
 import CustomSelect from '../common/CustomSelect';
-import type { ReviewEvidence } from './EvidenceReviewModal';
-
-export interface ScoreReviewSection {
-  id: string;
-  title: string;
-  maxScore: number;
-  selfScore: number;
-  classScore: string;
-  evidences: ReviewEvidence[];
-}
-
-interface ClassScoreReviewSectionProps {
-  section: ScoreReviewSection;
-  hasError: boolean;
-  onScoreChange: (sectionId: string, value: string) => void;
-  onOpenEvidence: (section: ScoreReviewSection) => void;
-}
+import type { ClassScoreReviewSectionProps } from '@/types/admin';
 
 const buildScoreOptions = (maxScore: number) =>
   Array.from({ length: maxScore + 1 }, (_, value) => ({

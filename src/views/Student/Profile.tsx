@@ -1,25 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Save, Calendar, Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import type { User } from '../../types/common';
-import type { Class, Faculty, Major, Student } from '../../types';
+import type { Class, Faculty, Major, Student, ProfileUser } from '../../types';
 import { API_Student } from '../../api/API_Student';
 import { API_Auth } from '../../api/API_Auth';
 import { CustomSelect } from '../../components/common/CustomSelect';
-
-type ManagedClass = {
-  classId?: string;
-  classCode?: string;
-  className?: string;
-  enrollmentYear?: number;
-  studentCount?: number;
-  major?: { name?: string } | null;
-  faculty?: { name?: string } | null;
-};
-
-type ProfileUser = User & Partial<Omit<Student, 'role'>> & {
-  managedClasses?: ManagedClass[];
-};
 
 export const StudentProfile = () => {
   const user = useAuthStore((state) => state.user) as ProfileUser | null;

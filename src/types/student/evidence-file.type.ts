@@ -7,3 +7,9 @@ export interface EvidenceFile {
   uploadDate: string;
   aiVerification?: 'verified' | 'suspicious' | 'manual_review';
 }
+
+export type UploadedEvidenceFile = {
+  name: string;
+  url: string;
+  type?: string;
+};

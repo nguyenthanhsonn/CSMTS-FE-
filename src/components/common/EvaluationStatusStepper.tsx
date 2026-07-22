@@ -1,23 +1,7 @@
 'use client';
 
 import { CheckCircle2, Circle, Clock3, XCircle } from 'lucide-react';
-
-export type EvaluationStepStatus = 'pending' | 'current' | 'completed' | 'rejected';
-
-export type EvaluationWorkflowStep = {
-  key: 'student_submit' | 'class_review' | 'admin_finalization' | string;
-  label: string;
-  status: EvaluationStepStatus;
-  completedAt?: string | null;
-};
-
-interface EvaluationStatusStepperProps {
-  status?: string | null;
-  statusLabel?: string | null;
-  steps?: EvaluationWorkflowStep[] | null;
-  compact?: boolean;
-  className?: string;
-}
+import type { EvaluationStepStatus, EvaluationWorkflowStep, EvaluationStatusStepperProps } from '@/types/common';
 
 const defaultSteps: EvaluationWorkflowStep[] = [
   { key: 'student_submit', label: 'Sinh viên nộp phiếu', status: 'pending' },

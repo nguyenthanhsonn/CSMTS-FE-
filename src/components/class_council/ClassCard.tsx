@@ -1,21 +1,9 @@
 'use client';
 
 import { CalendarDays, ChevronRight, School, Users } from 'lucide-react';
+import type { CouncilClass, ClassCardProps } from '@/types/admin';
 
-export interface CouncilClass {
-  id: string;
-  name: string;
-  studentCount: number;
-  facultyName?: string;
-  academicYear?: string;
-  semester?: string;
-  schoolYear?: string;
-}
-
-interface ClassCardProps {
-  classItem: CouncilClass;
-  onOpen: (classId: string) => void;
-}
+export type { CouncilClass };
 
 export default function ClassCard({ classItem, onOpen }: ClassCardProps) {
   return (

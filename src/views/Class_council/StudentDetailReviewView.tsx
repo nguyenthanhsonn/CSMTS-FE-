@@ -9,12 +9,7 @@ import EvidenceReviewModal, { type ReviewEvidence } from '@/components/class_cou
 import EvaluationStatusStepper from '@/components/common/EvaluationStatusStepper';
 import { useToast } from '@/components/common/ToastProvider';
 import { getUserFriendlyError } from '@/utils/errorHelper';
-
-interface ReviewStudent {
-  id: string;
-  code: string;
-  fullName: string;
-}
+import type { ReviewStudent } from '@/types/admin';
 
 const getParam = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value ?? '');
 

@@ -1,41 +1,7 @@
 'use client';
 
 import { Upload, ChevronDown, ChevronUp } from 'lucide-react';
-
-interface Props {
-  expandedSections: {[key: string]: boolean};
-  toggleSection: (section: string) => void;
-  politicalActivity: string;
-  setPoliticalActivity: (value: string) => void;
-  culturalActivity: string;
-  setCulturalActivity: (value: string) => void;
-  clubActivity: string;
-  setClubActivity: (value: string) => void;
-  antiSocial: string;
-  setAntiSocial: (value: string) => void;
-  awardPoints: number;
-  setAwardPoints: (value: number) => void;
-  policyCompliance: string;
-  setPolicyCompliance: (value: string) => void;
-  charityWork: string;
-  setCharityWork: (value: string) => void;
-  collectiveBuilding: string;
-  setCollectiveBuilding: (value: string) => void;
-  roleType: 'cadre' | 'regular';
-  setRoleType: (value: 'cadre' | 'regular') => void;
-  cadrePosition: string;
-  setCadrePosition: (value: string) => void;
-  cadrePerformance: string;
-  setCadrePerformance: (value: string) => void;
-  managementLevel: string;
-  setManagementLevel: (value: string) => void;
-  classParticipation: number;
-  setClassParticipation: (value: number) => void;
-  specialAchievement: string;
-  setSpecialAchievement: (value: string) => void;
-  showScores: boolean;
-  scores: any;
-}
+import type { EvaluationPageProps as Props } from '@/types/student';
 
 export const EvaluationPages345 = (props: Props) => {
   const {

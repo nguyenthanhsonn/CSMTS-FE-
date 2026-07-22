@@ -1,6 +1,6 @@
 export type { Admin, DashboardStats } from './admin-user.type';
-export type { Class, Faculty, Major } from './academic.type';
-export type { EvaluationReviewAction, EvaluationReviewPermission } from './evaluation-review.type';
+export type { Class, Faculty, Major, ClassCouncil, ClassTableRow } from './academic.type';
+export type { EvaluationReviewAction, EvaluationReviewPermission, EvaluationRow, ReviewStudent } from './evaluation-review.type';
 export type { StudentManagementItem, ClassListStudentItem } from './student-management.type';
 export type {
   AddStudentToClassPayload,
@@ -29,6 +29,7 @@ export type {
   MajorPayload,
   PaginatedResponse,
   PaginationQuery,
+  PagedResult,
   Post,
   PostPayload,
   ReopenEvaluationPayload,
@@ -42,7 +43,7 @@ export type {
   TrainingResultsReport,
   UserListQuery,
 } from './api.type';
-export type { FacultyFormValues, MajorFormValues, ClassFormValues, StudentFormValues } from './forms.type';
+export type { FacultyFormValues, MajorFormValues, ClassFormValues, StudentFormValues, SemesterFormState } from './forms.type';
 export type {
   AdminStatItem,
   AdminStatsGridProps,
@@ -51,4 +52,35 @@ export type {
   ActivityItem,
   AdminActivityFeedCardProps,
   ImportResult,
+  Column,
+  DataTableProps,
+  SearchFilterBarProps,
+  AddActionsDropdownProps,
+  ModalAddStudentProps,
+  AddStudentFormValues,
+  ModalCreateClassProps,
+  ModalCreateFacultyProps,
+  ModalCreateManualStudentProps,
+  CreateManualStudentFieldProps,
+  ModalCreateStudentProps,
+  CreateStudentFieldProps,
+  ModalImportExcelProps,
+  ModalImportFacultyProps,
+  ModalImportMajorProps,
+  ModalCreateMajorProps,
+  AdminClassListProps,
+  CouncilClass,
+  ClassCardProps,
+  ReviewStatusFilter,
+  ClassReviewFilterBarProps,
+  ReviewEvidence,
+  ScoreReviewSection,
+  ClassScoreReviewSectionProps,
+  ClassStatsWidgetProps,
+  CouncilDeductionStepperProps,
+  CouncilCriteriaReviewTableProps,
+  EvidenceReviewModalProps,
+  StudentReviewStatus,
+  CouncilStudentReview,
+  StudentReviewTableProps,
 } from './components.type';
