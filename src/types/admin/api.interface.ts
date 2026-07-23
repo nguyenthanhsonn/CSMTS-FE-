@@ -81,6 +81,17 @@ export interface FinalizeEvaluationPayload {
   finalScore?: number;
 }
 
+export interface BulkFinalizeEvaluationsPayload {
+  evaluationIds: string[];
+}
+
+export interface FinalizeEvaluationsByFilterPayload {
+  semesterId?: string;
+  facultyId?: string;
+  classId?: string;
+  confirmLargeAction?: boolean;
+}
+
 /** Thông tin khoa. */
 export interface FacultyPayload {
   code: string;

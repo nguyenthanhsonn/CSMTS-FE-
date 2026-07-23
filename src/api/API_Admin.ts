@@ -9,10 +9,12 @@ import type {
   AdminMajor,
   AdminSemester,
   AdminUser,
+  BulkFinalizeEvaluationsPayload,
   ConfirmImportPayload,
   CreateStudentPayload,
   CreateUserPayload,
   FinalizeEvaluationPayload,
+  FinalizeEvaluationsByFilterPayload,
   FacultyPayload,
   ImportFacultiesResult,
   ImportStudentsPayload,
@@ -136,6 +138,16 @@ async function reviewEvaluation(id: string, payload: ReviewEvaluationPayload) {
 /** Admin phê duyệt cuối phiếu đánh giá. */
 async function finalizeEvaluation(id: string, payload: FinalizeEvaluationPayload = {}) {
   return patch<AdminEvaluationItem>(`/admin/training-evaluations/${id}/finalize`, payload);
+}
+
+/** Admin phê duyệt nhiều phiếu đã chọn. */
+async function bulkFinalizeEvaluations(payload: BulkFinalizeEvaluationsPayload) {
+  return patch<{ finalizedCount?: number; items?: AdminEvaluationItem[] }>('/admin/evaluations/bulk-finalize', payload);
+}
+
+/** Admin phê duyệt tất cả phiếu theo bộ lọc hiện tại. */
+async function finalizeEvaluationsByFilter(payload: FinalizeEvaluationsByFilterPayload) {
+  return post<{ finalizedCount?: number; total?: number }>('/admin/evaluations/finalize-by-filter', payload);
 }
 
 /** Lấy danh sách khoa. */
@@ -385,6 +397,8 @@ export const API_Admin = {
   reviewScoresByClassCouncil,
   reviewEvaluation,
   finalizeEvaluation,
+  bulkFinalizeEvaluations,
+  finalizeEvaluationsByFilter,
   getFaculties,
   getFacultyById,
   createFaculty,

@@ -18,6 +18,36 @@ const statusConfig = {
   rejected: { label: 'Bị trả về', className: 'bg-red-100 text-red-700' },
 } as const;
 
+const rankConfig = {
+  excellent: { label: 'Xuất sắc', className: 'bg-emerald-100 text-emerald-700' },
+  good: { label: 'Tốt', className: 'bg-blue-100 text-blue-700' },
+  fair: { label: 'Khá', className: 'bg-purple-100 text-purple-700' },
+  average: { label: 'Trung bình', className: 'bg-amber-100 text-amber-700' },
+  weak: { label: 'Yếu', className: 'bg-orange-100 text-orange-700' },
+  poor: { label: 'Kém', className: 'bg-red-100 text-red-700' },
+} as const;
+
+function getRankMeta(rank?: string | null) {
+  const normalized = String(rank || '').trim().toLowerCase();
+  const legacyMap: Record<string, keyof typeof rankConfig> = {
+    excellent: 'excellent',
+    'xuất sắc': 'excellent',
+    good: 'good',
+    'tốt': 'good',
+    fair: 'fair',
+    'khá': 'fair',
+    average: 'average',
+    'trung bình': 'average',
+    weak: 'weak',
+    'yếu': 'weak',
+    poor: 'poor',
+    'kém': 'poor',
+  };
+  const key = legacyMap[normalized];
+
+  return key ? rankConfig[key] : { label: rank || 'Chưa xếp loại', className: 'bg-gray-100 text-gray-700' };
+}
+
 function unwrapPaged<T>(response: any): PagedResult<T> {
   const data = response?.data || response;
   const container = Array.isArray(data) ? { items: data } : data;
@@ -173,7 +203,7 @@ export function AdminEvaluations() {
     setSelectedEvaluation(null);
   };
 
-  const finalizeEvaluations = async (rows: EvaluationRow[]) => {
+  const finalizeSelectedEvaluations = async (rows: EvaluationRow[]) => {
     if (rows.length === 0) {
       toast.error('Vui lòng chọn ít nhất một phiếu cần phê duyệt.');
       return;
@@ -181,7 +211,7 @@ export function AdminEvaluations() {
 
     try {
       setSubmitting(true);
-      await Promise.all(rows.map((item) => API_Admin.finalizeEvaluation(item.id, {})));
+      await API_Admin.bulkFinalizeEvaluations({ evaluationIds: rows.map((item) => item.id) });
       toast.success(`Đã phê duyệt ${rows.length} phiếu đánh giá.`);
       setConfirmMode(null);
       await loadEvaluations();
@@ -190,19 +220,6 @@ export function AdminEvaluations() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const loadAllFilteredRows = async () => {
-    const response = await API_Admin.getAdminEvaluations({
-      page: 1,
-      limit: Math.max(totalFiltered, 1),
-      keyword: keyword.trim() || undefined,
-      facultyId: facultyId || undefined,
-      classId: classId || undefined,
-      semester: selectedSemester?.semester,
-      academicYear: selectedSemester?.academicYear,
-    });
-    return unwrapPaged<any>(response).items.map(mapEvaluationRow);
   };
 
   const handleFinalize = async () => {
@@ -223,16 +240,24 @@ export function AdminEvaluations() {
 
   const handleConfirmBulk = async () => {
     if (confirmMode === 'selected') {
-      await finalizeEvaluations(selectedRows);
+      await finalizeSelectedEvaluations(selectedRows);
       return;
     }
 
     try {
       setSubmitting(true);
-      const rows = await loadAllFilteredRows();
-      await finalizeEvaluations(rows);
+      await API_Admin.finalizeEvaluationsByFilter({
+        semesterId: semesterFilter || undefined,
+        facultyId: facultyId || undefined,
+        classId: classId || undefined,
+        confirmLargeAction: approveAllCount > 500 ? true : undefined,
+      });
+      toast.success(`Đã phê duyệt ${approveAllCount.toLocaleString('vi-VN')} phiếu đánh giá.`);
+      setConfirmMode(null);
+      await loadEvaluations();
     } catch (err) {
-      toast.error(getUserFriendlyError(err, 'Không thể tải toàn bộ danh sách đang lọc.'));
+      toast.error(getUserFriendlyError(err, 'Không thể phê duyệt toàn bộ danh sách đang lọc.'));
+    } finally {
       setSubmitting(false);
     }
   };
@@ -364,6 +389,7 @@ export function AdminEvaluations() {
 
               {visibleRows.map((row) => {
                 const config = statusConfig[normalizeStatus(row.status) as keyof typeof statusConfig] || statusConfig.class_approved;
+                const rank = getRankMeta(row.classification);
 
                 return (
                   <div key={row.id} className="rounded-xl border border-[#E9ECEF] bg-white p-4 shadow-sm">
@@ -388,7 +414,7 @@ export function AdminEvaluations() {
                       </div>
                       <div className="rounded-lg bg-[#F8F9FA] p-3">
                         <p className="text-xs font-bold uppercase text-[#868E96]">Xếp loại</p>
-                        <p className="mt-1 text-xl font-bold text-[#495057]">{row.classification || '—'}</p>
+                        <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${rank.className}`}>{rank.label}</span>
                       </div>
 	                    </div>
 	                    <EvaluationStatusStepper status={row.status} statusLabel={row.statusLabel} compact className="mt-4" />
@@ -447,10 +473,11 @@ export function AdminEvaluations() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRows.map((row) => {
-                    const config = statusConfig[normalizeStatus(row.status) as keyof typeof statusConfig] || statusConfig.class_approved;
+	                  {visibleRows.map((row) => {
+	                    const config = statusConfig[normalizeStatus(row.status) as keyof typeof statusConfig] || statusConfig.class_approved;
+	                    const rank = getRankMeta(row.classification);
 
-                    return (
+	                    return (
                       <tr key={row.id} className="transition hover:bg-[#F8F9FA]">
                         <td className="border-b border-[#E9ECEF] px-4 py-4">
                           <input
@@ -463,7 +490,9 @@ export function AdminEvaluations() {
                         <td className="border-b border-[#E9ECEF] px-4 py-4 font-bold text-[#1A1B1E]">{row.studentName}</td>
                         <td className="border-b border-[#E9ECEF] px-4 py-4 font-mono text-sm font-bold text-[#3B5BDB]">{row.className}</td>
                         <td className="border-b border-[#E9ECEF] px-4 py-4 font-bold text-[#1A1B1E]">{row.classScore ?? '—'}</td>
-                        <td className="border-b border-[#E9ECEF] px-4 py-4 font-bold text-[#495057]">{row.classification || '—'}</td>
+	                        <td className="border-b border-[#E9ECEF] px-4 py-4">
+	                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${rank.className}`}>{rank.label}</span>
+	                        </td>
 	                        <td className="border-b border-[#E9ECEF] px-4 py-4">
 	                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${config.className}`}>{config.label}</span>
 	                        </td>
@@ -548,9 +577,14 @@ export function AdminEvaluations() {
             <p className="mt-1 text-sm font-medium text-[#868E96]">{selectedEvaluation.studentName} - {selectedEvaluation.className}</p>
 
 	            <div className="mt-5 rounded-xl border border-[#E9ECEF] bg-[#F8F9FA] p-4">
-              <p className="text-xs font-bold uppercase text-[#868E96]">Điểm lớp đã duyệt</p>
-              <p className="mt-1 text-3xl font-bold text-[#0B3A82]">{selectedEvaluation.classScore ?? '—'}</p>
-              <p className="mt-2 text-sm font-semibold text-[#495057]">Xếp loại: {selectedEvaluation.classification || '—'}</p>
+	              <p className="text-xs font-bold uppercase text-[#868E96]">Điểm lớp đã duyệt</p>
+	              <p className="mt-1 text-3xl font-bold text-[#0B3A82]">{selectedEvaluation.classScore ?? '—'}</p>
+	              <p className="mt-2 text-sm font-semibold text-[#495057]">
+	                Xếp loại:{' '}
+	                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${getRankMeta(selectedEvaluation.classification).className}`}>
+	                  {getRankMeta(selectedEvaluation.classification).label}
+	                </span>
+	              </p>
 	            </div>
 	            <EvaluationStatusStepper
 	              status={selectedEvaluation.status}
